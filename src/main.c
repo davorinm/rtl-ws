@@ -19,7 +19,7 @@
 #define SPECTRUM_GAIN_CMD       "spectrumgain"
 #define START_CMD               "start"
 #define STOP_CMD                "stop"
-#define PORT                    8080
+#define PORT                    8090
 #define DECIMATED_TARGET_BW_HZ  192000
 
 struct per_session_data__rtl_ws {

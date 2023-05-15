@@ -30,6 +30,9 @@ static const char * get_mimetype(const char *file)
     if (!strcmp(&file[n - 5], ".html"))
         return "text/html";
 
+    if (!strcmp(&file[n - 4], ".css"))
+        return "text/css";
+
     if (!strcmp(&file[n - 3], ".js"))
         return "text/javascript";
 
@@ -100,9 +103,13 @@ int callback_http(struct lws *wsi,
                     HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE, NULL);
                 return -1;
             }
-
-            if (lws_serve_http_file(wsi, buf, mimetype, NULL, 0))
+            
+            lwsl_err("Serving file %s\n", buf);
+ 
+            m = lws_serve_http_file(wsi, buf, mimetype, NULL, 0);
+            if (m)
             {
+                lwsl_err("Error serving file %i %s\n", m, buf);
                 return -1; /* through completion or error, close the socket */
             }
 

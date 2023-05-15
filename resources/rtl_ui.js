@@ -69,22 +69,6 @@ function getAudio(output, length) {
 }
 
 function initialize() {
-    try {
-        window.AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioContext = new AudioContext();
-    } catch(e) {
-        alert('Web Audio API is not supported in this browser');
-    }
-    console.log("Audio sample rate is " + audioContext.sampleRate + " Hz");
-    if (audioContext.sampleRate != 48000)
-    {
-        alert("Audio sample rate should be 48 kHz for playback");
-    }
-
-    playbackNode = audioContext.createScriptProcessor(audioBufferSize, 1, 1);
-    playbackNode.onaudioprocess = function(e) {
-        getAudio(e.outputBuffer.getChannelData(0), audioBufferSize);
-    };
 
     socket_lm = new WebSocket(get_appropriate_ws_url(), "rtl-ws-protocol");
     console.log("WebSocket instantiated");
@@ -293,10 +277,30 @@ function start_or_stop() {
     }
 }
 
+function initialize_sound() {
+    try {
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioContext = new AudioContext();
+    } catch(e) {
+        alert('Web Audio API is not supported in this browser');
+    }
+    console.log("Audio sample rate is " + audioContext.sampleRate + " Hz");
+    if (audioContext.sampleRate != 48000)
+    {
+        alert("Audio sample rate should be 48 kHz for playback");
+    }
+
+    playbackNode = audioContext.createScriptProcessor(audioBufferSize, 1, 1);
+    playbackNode.onaudioprocess = function(e) {
+        getAudio(e.outputBuffer.getChannelData(0), audioBufferSize);
+    };
+}
+
 function toggle_sound() {
     audioBufferQueue = [];
     sound_on = !sound_on;
     if (sound_on) {
+        initialize_sound()
         playbackNode.connect(audioContext.destination);
     } else {
         playbackNode.disconnect(audioContext.destination);
