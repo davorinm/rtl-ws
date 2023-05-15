@@ -13,3 +13,8 @@ Software radio based on RTL2832U-dongle.
 * Server is runnable in Raspberry Pi (Rasbpian, Model B+)
 
 Check Wiki for details.
+
+sudo apt-get install libpthread-stubs0-dev
+sudo apt-get install libwebsockets-dev
+sudo apt-get install librtlsdr-dev
+sudo apt-get install libfftw3-dev

@@ -2,12 +2,13 @@ SRCDIR=src
 BUILDDIR=build
 VPATH=$(SRCDIR)
 PERF_OPTS=-O3 -ffast-math -funroll-loops
-GCC=clang $(PERF_OPTS)
+GCC=gcc $(PERF_OPTS)
 PPDEFS=-DRTL_WS_DEBUG
 PROGRAM=$(BUILDDIR)/rtl-ws-server
 CSOURCEFILES=$(shell ls $(SRCDIR)/*.c)
 COBJFILES=$(subst .c,.o,$(subst $(SRCDIR),$(BUILDDIR),$(CSOURCEFILES)))
 REAL_SENSOR:=1
+
 ifeq ($(REAL_SENSOR), 1)
 PPDEFS+=-DREAL_SENSOR
 SENSORLIB=-lrtlsdr
