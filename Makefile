@@ -22,7 +22,7 @@ define link
 $(GCC) $^ -lpthread -lwebsockets $(SENSORLIB) -lrt -lm -lfftw3 -o $@
 endef
 
-.PHONY: all build prepare clean
+.PHONY: all build prepare clean run
 
 build: $(PROGRAM)
 	
@@ -39,4 +39,9 @@ prepare:
 
 clean:
 	rm -rf $(BUILDDIR)
+
+run: build
+	open http://localhost:8090
+	./build/rtl-ws-server
+	
 

@@ -4,15 +4,12 @@
 #include "http_handler.h"
 
 #define MAIN_HTML   "/rtl-ui.html"
-#define HTML_PATH   "../resources"
+#define HTML_PATH   "./resources"
 
 struct per_session_data__http 
 {
     int fd;
 };
-
-static struct lws_protocols http_protocol =
-    { "http-only", callback_http, sizeof (struct per_session_data__http) };
 
 static const char * get_mimetype(const char *file)
 {
@@ -39,13 +36,7 @@ static const char * get_mimetype(const char *file)
     return NULL;
 }
 
-struct lws_protocols* get_http_protocol()
-{
-    return &http_protocol;
-}
-
-int callback_http(struct lws *wsi,
-    enum lws_callback_reasons reason, void *user, void *in, size_t len)
+static int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
 {
     static unsigned char buffer[4096];
     char buf[256];
@@ -121,8 +112,7 @@ int callback_http(struct lws *wsi,
             if (len < 20)
                 buf[len] = '\0';
 
-            lwsl_notice("LWS_CALLBACK_HTTP_BODY: %s... len %d\n",
-                (const char *)buf, (int)len);
+            lwsl_notice("LWS_CALLBACK_HTTP_BODY: %s... len %d\n", (const char *)buf, (int)len);
 
             break;
 
@@ -169,4 +159,15 @@ int callback_http(struct lws *wsi,
     }
 
     return 0;
+}
+
+static struct lws_protocols http_protocol = { 
+    "http-only", 
+    callback_http, 
+    sizeof (struct per_session_data__http) 
+};
+
+struct lws_protocols* get_http_protocol()
+{
+    return &http_protocol;
 }

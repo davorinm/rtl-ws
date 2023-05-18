@@ -34,6 +34,10 @@ void audio_init()
 
 int audio_new_audio_available()
 {
+    if (full_audio_buffers == NULL) {
+        return 0;
+    }
+
     return list_length(full_audio_buffers) > 0;
 }
 

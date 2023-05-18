@@ -38,18 +38,18 @@ function getAudio(output, length) {
         if (buf != null) {
             var len = ((length - offset) <= buf.length) ? (length - offset) : buf.length;
             for (var i = 0; i < len; i++) {
-                output[offset + i] = 0.4*buf[i];
+                output[offset + i] = 0.4 * buf[i];
                 if (i > 1) {
-                    output[offset + i] += 0.2*buf[i-1];
+                    output[offset + i] += 0.2 * buf[i - 1];
                 }
                 if (i > 2) {
-                    output[offset + i] += 0.1*buf[i-2];
+                    output[offset + i] += 0.1 * buf[i - 2];
                 }
                 if (i < (len - 1)) {
-                    output[offset + i] += 0.2*buf[i+1];
+                    output[offset + i] += 0.2 * buf[i + 1];
                 }
                 if (i < (len - 2)) {
-                    output[offset + i] += 0.1*buf[i+2];
+                    output[offset + i] += 0.1 * buf[i + 2];
                 }
             }
             if (len - buf.length > 0) {
@@ -69,15 +69,14 @@ function getAudio(output, length) {
 }
 
 function initialize() {
-
     socket_lm = new WebSocket(get_appropriate_ws_url(), "rtl-ws-protocol");
     console.log("WebSocket instantiated");
     try {
         socket_lm.binaryType = "arraybuffer";
 
-        socket_lm.onopen = function() {
+        socket_lm.onopen = function () {
             document.getElementById("ws_status").src = "connect2.png";
-        } 
+        }
 
         socket_lm.onmessage = function got_packet(msg) {
             var data_type = "";
@@ -106,12 +105,12 @@ function initialize() {
                             ctx.beginPath();
                             for (var idx = 0; idx < bytearray.length - header_len; idx++) {
                                 if (idx == 0) {
-                                    ctx.moveTo(0, -value*4+y_offset);
+                                    ctx.moveTo(0, -value * 4 + y_offset);
                                     ctx.strokeStyle = "black";
                                 }
                                 var value = bytearray[idx + header_len];
-                                spectrogram[spectrogram_idx][idx-1] = value;
-                                ctx.lineTo(idx, -value*4+y_offset);
+                                spectrogram[spectrogram_idx][idx - 1] = value;
+                                ctx.lineTo(idx, -value * 4 + y_offset);
                             }
                             ctx.stroke();
                             ctx.closePath();
@@ -125,7 +124,7 @@ function initialize() {
                         }
                     } else if (i[0] == 'b') {
                         var bw_element = document.getElementById("bandwidth");
-                        if ((bw_element.value*1000) != i[1]) {
+                        if ((bw_element.value * 1000) != i[1]) {
                             bw_element.style.color = "lightgray";
                         } else {
                             bw_element.style.color = "black";
@@ -134,7 +133,7 @@ function initialize() {
                         }
                     } else if (i[0] == 'f') {
                         var freq_element = document.getElementById("frequency");
-                        if ((freq_element.value*1000) != i[1]) {
+                        if ((freq_element.value * 1000) != i[1]) {
                             freq_element.style.color = "lightgray";
                         } else {
                             freq_element.style.color = "black";
@@ -155,41 +154,31 @@ function initialize() {
                 }
                 f++;
             }
+
             if (redraw_hz_axis) {
                 ctx.font = "10px Georgia";
                 ctx.fillStyle = "black";
-                var freqtext = (real_frequency-real_bandwidth/2)/1000+" MHz";
+                var freqtext = (real_frequency - real_bandwidth / 2) / 1000 + " MHz";
                 var w = ctx.measureText(freqtext).width;
                 ctx.fillText(freqtext, 0, 300);
-                freqtext = (real_frequency)/1000+" MHz";
+                freqtext = (real_frequency) / 1000 + " MHz";
                 w = ctx.measureText(freqtext).width;
-                ctx.fillText(freqtext, 512-w/2, 300);
-                freqtext = (real_frequency+real_bandwidth/2)/1000+" MHz";
+                ctx.fillText(freqtext, 512 - w / 2, 300);
+                freqtext = (real_frequency + real_bandwidth / 2) / 1000 + " MHz";
                 w = ctx.measureText(freqtext).width;
-                ctx.fillText(freqtext, 1024-w, 300);
+                ctx.fillText(freqtext, 1024 - w, 300);
             }
-            if (conn_counter > 5 || conn_counter < 1) {
-                conn_inc = -conn_inc;
-            } 
-            ctx.beginPath();
-            ctx.lineWidth = "1";
-            ctx.fillStyle="lightgray";
-            ctx.arc(conn_counter*5+5, 5, 4, 0, 2*Math.PI);
-            ctx.fill();
-            ctx.closePath();
-
-            conn_counter += conn_inc;
         }
 
-        socket_lm.onclose = function(){
+        socket_lm.onclose = function () {
             document.getElementById("ws_status").src = "connect2_close.png";
         }
 
-        socket_lm.onerror = function(){
+        socket_lm.onerror = function () {
             document.getElementById("ws_status").src = "connect2_close.png";
         }
-    } catch(exception) {
-        alert('<p>Error' + exception);  
+    } catch (exception) {
+        alert('<p>Error' + exception);
     }
 
     var canvas = document.createElement('canvas');
@@ -200,11 +189,12 @@ function initialize() {
 
     document.getElementById('spectrum').appendChild(canvas);
 
-    setInterval(update_spectrogram, 150);
+    setInterval(update_spectrogram, 250);
+
+    document.getElementById("toggle_sound").disabled = true;
 }
 
-function get_appropriate_ws_url()
-{
+function get_appropriate_ws_url() {
     var pcol;
     var u = document.URL;
 
@@ -222,26 +212,25 @@ function get_appropriate_ws_url()
     return pcol + u[0];
 }
 
-function update_spectrogram()    
-{
+function update_spectrogram() {
     if (started) {
         for (var y = 0; y < spectrogram.length; y++) {
             var s_y = spectrogram_idx + y;
             s_y = ((s_y >= spectrogram.length) ? (s_y - spectrogram.length) : s_y);
             for (var x = 0; x < 1024; x++) {
-                var idx = (((spectrogram.length-1)-y)*1024*4)+x*4;
+                var idx = (((spectrogram.length - 1) - y) * 1024 * 4) + x * 4;
                 var ampl = 0;
                 try {
                     ampl = spectrogram[s_y][x];
-                } catch(exception) {
+                } catch (exception) {
                     ampl = 0;
                 }
                 ampl *= 8;
                 ampl += 12;
-                spectrogram_image.data[idx+0] = 255-ampl;
-                spectrogram_image.data[idx+1] = 255-ampl;
-                spectrogram_image.data[idx+2] = 255-ampl;
-                spectrogram_image.data[idx+3] = 255;
+                spectrogram_image.data[idx + 0] = 255 - ampl;
+                spectrogram_image.data[idx + 1] = 255 - ampl;
+                spectrogram_image.data[idx + 2] = 255 - ampl;
+                spectrogram_image.data[idx + 3] = 255;
             }
         }
         ctx.putImageData(spectrogram_image, 0, spectrogram_offset);
@@ -275,34 +264,46 @@ function start_or_stop() {
         started = false;
         document.getElementById("start_or_stop").value = "start";
     }
+
+    // Toggle Audio button
+    document.getElementById("toggle_sound").disabled = !started;
 }
 
 function initialize_sound() {
     try {
         window.AudioContext = window.AudioContext || window.webkitAudioContext;
         audioContext = new AudioContext();
-    } catch(e) {
+    } catch (e) {
         alert('Web Audio API is not supported in this browser');
     }
     console.log("Audio sample rate is " + audioContext.sampleRate + " Hz");
-    if (audioContext.sampleRate != 48000)
-    {
+    if (audioContext.sampleRate != 48000) {
         alert("Audio sample rate should be 48 kHz for playback");
     }
 
     playbackNode = audioContext.createScriptProcessor(audioBufferSize, 1, 1);
-    playbackNode.onaudioprocess = function(e) {
+    playbackNode.onaudioprocess = function (e) {
         getAudio(e.outputBuffer.getChannelData(0), audioBufferSize);
     };
 }
 
 function toggle_sound() {
-    audioBufferQueue = [];
-    sound_on = !sound_on;
+    var value = document.getElementById("toggle_sound").value;
+    socket_lm.send(value);
+    if (value == "start_audio") {
+        sound_on = true;
+        document.getElementById("toggle_sound").value = "stop_audio";
+    } else {
+        sound_on = false;
+        document.getElementById("toggle_sound").value = "start_audio";
+    }
+
     if (sound_on) {
+        audioBufferQueue = [];
         initialize_sound()
         playbackNode.connect(audioContext.destination);
     } else {
+        playbackNode = null;
         playbackNode.disconnect(audioContext.destination);
     }
 }
