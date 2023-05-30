@@ -1,7 +1,7 @@
 #ifndef SIGNAL_SOURCE_H
 #define SIGNAL_SOURCE_H
 
-#include "common_sp.h"
+#include "../dsp/dsp_common.h"
 #include "rtl_sensor.h"
 
 typedef void (*signal_source_callback)(const cmplx_u8*,int);

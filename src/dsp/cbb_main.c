@@ -3,13 +3,13 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <math.h>
-#include "common.h"
-#include "rtl_sensor.h"
-#include "spectrum.h"
-#include "signal_source.h"
-#include "log.h"
+#include "../tools/common.h"
+#include "../signal/rtl_sensor.h"
+#include "../spectrum.h"
+#include "../signal/signal_source.h"
+#include "../tools/log.h"
 #include "rf_decimator.h"
-#include "rate_logger.h"
+#include "../tools/rate_logger.h"
 #include "cbb_main.h"
 
 #define DEV_INDEX           0

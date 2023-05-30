@@ -1,7 +1,7 @@
 #ifndef AUDIO_MAIN_H
 #define AUDIO_MAIN_H
 
-#include "common_sp.h"
+#include "dsp/dsp_common.h"
 
 void audio_init();
 

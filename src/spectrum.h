@@ -2,7 +2,7 @@
 #define SPECTRUM_H
 
 #include <stdint.h>
-#include "common_sp.h"
+#include "dsp/dsp_common.h"
 
 struct spectrum;
 

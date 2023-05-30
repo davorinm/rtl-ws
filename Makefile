@@ -5,14 +5,11 @@ PERF_OPTS=-O3 -ffast-math -funroll-loops
 GCC=gcc $(PERF_OPTS)
 PPDEFS=-DRTL_WS_DEBUG
 PROGRAM=$(BUILDDIR)/rtl-ws-server
-CSOURCEFILES=$(shell ls $(SRCDIR)/*.c)
+#CSOURCEFILES=$(shell ls $(SRCDIR)/*.c)
+CSOURCEFILES=$(shell find $(SRCDIR) -iname \*.c)
 COBJFILES=$(subst .c,.o,$(subst $(SRCDIR),$(BUILDDIR),$(CSOURCEFILES)))
-REAL_SENSOR:=1
 
-ifeq ($(REAL_SENSOR), 1)
-PPDEFS+=-DREAL_SENSOR
 SENSORLIB=-lrtlsdr
-endif
 
 define compilec
 $(GCC) $(PPDEFS) -c -B $(SRCDIR) $< -o $@
@@ -30,8 +27,10 @@ all: clean build
 	
 $(PROGRAM): $(COBJFILES) $(CPPOBJFILES)
 	$(link) 
+	@ls -lh build/rtl-ws-server >> build.txt
 
-$(BUILDDIR)/%.o: %.c | prepare
+$(BUILDDIR)/%.o: %.c
+	@mkdir -p $(dir $@)
 	$(compilec)
 
 prepare:

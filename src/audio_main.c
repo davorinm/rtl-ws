@@ -2,10 +2,10 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "resample.h"
-#include "log.h"
-#include "list.h"
-#include "rate_logger.h"
+#include "dsp/resample.h"
+#include "tools/log.h"
+#include "tools/list.h"
+#include "tools/rate_logger.h"
 #include "audio_main.h"
 
 #define AUDIO_BUFFER_POOL   50

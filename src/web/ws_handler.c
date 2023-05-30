@@ -2,9 +2,9 @@
 #include <stdio.h>
 
 #include "ws_handler.h"
-#include "cbb_main.h"
-#include "audio_main.h"
-#include "log.h"
+#include "../dsp/cbb_main.h"
+#include "../audio_main.h"
+#include "../tools/log.h"
 
 #define SEND_BUFFER_SIZE        16384
 
@@ -75,7 +75,7 @@ static int callback_ws(struct lws *wsi, enum lws_callback_reasons reason, void *
                     nn = cbb_get_spectrum_payload(&send_buffer[LWS_SEND_BUFFER_PRE_PADDING+n], SEND_BUFFER_SIZE/2, spectrum_gain);
                     nnn = lws_write(wsi, (unsigned char *) &send_buffer[LWS_SEND_BUFFER_PRE_PADDING], n+nn, LWS_WRITE_BINARY);
                 } 
-                else if (audio_new_audio_available() && pss->audio_data == 1)
+                else if (audio_new_audio_available()) // && pss->audio_data == 1)
                 {
                     memset(send_buffer, 0, LWS_SEND_BUFFER_PRE_PADDING + SEND_BUFFER_SIZE + LWS_SEND_BUFFER_POST_PADDING);
                     if (pss->sent_audio_fragments == 0)
@@ -98,8 +98,7 @@ static int callback_ws(struct lws *wsi, enum lws_callback_reasons reason, void *
                         {
                             pss->sent_audio_fragments = 0;
                         }
-                        nnn = lws_write(wsi, (unsigned char *)
-                            &(send_buffer[LWS_SEND_BUFFER_PRE_PADDING]), n + nn, audio_write_mode);
+                        nnn = lws_write(wsi, (unsigned char *) &(send_buffer[LWS_SEND_BUFFER_PRE_PADDING]), n + nn, audio_write_mode);
                     }
                     else 
                     {
@@ -162,10 +161,12 @@ static int callback_ws(struct lws *wsi, enum lws_callback_reasons reason, void *
             else if ((len >= strlen(START_AUDIO_CMD)) && strncmp(START_AUDIO_CMD, in_buffer, strlen(START_AUDIO_CMD)) == 0)
             {
                 pss->audio_data = 1;
+                INFO("Audio enabled\n");
             }
             else if ((len >= strlen(STOP_AUDIO_CMD)) && strncmp(STOP_AUDIO_CMD, in_buffer, strlen(STOP_AUDIO_CMD)) == 0)
             {
                 pss->audio_data = 0;
+                INFO("Audio disabled\n");
             }
             free(in_buffer);
             break;

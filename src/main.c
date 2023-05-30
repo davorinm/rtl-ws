@@ -5,16 +5,16 @@
 #include <unistd.h>
 #include <libwebsockets.h>
 
-#include "log.h"
-#include "rtl_sensor.h"
+#include "tools/log.h"
+#include "signal/rtl_sensor.h"
 
-#include "http_handler.h"
-#include "ws_handler.h"
+#include "web/http_handler.h"
+#include "web/ws_handler.h"
 
-#include "rf_decimator.h"
+#include "dsp/rf_decimator.h"
 
 #include "audio_main.h"
-#include "cbb_main.h"
+#include "dsp/cbb_main.h"
 
 #define PORT                    8090
 

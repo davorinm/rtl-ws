@@ -2,7 +2,7 @@
 #define CBB_MAIN_H
 
 #include "rf_decimator.h"
-#include "rtl_sensor.h"
+#include "../signal/rtl_sensor.h"
 
 void cbb_init();
 

@@ -1,7 +1,7 @@
 #ifndef RF_DECIMATOR_H
 #define RF_DECIMATOR_H
 
-#include "common_sp.h"
+#include "dsp_common.h"
 
 typedef void (*rf_decimator_callback)(const cmplx_s32*,int);
 

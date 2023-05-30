@@ -1,5 +1,5 @@
-#ifndef COMMON_SP_H
-#define COMMON_SP_H
+#ifndef DSP_COMMON_H
+#define DSP_COMMON_H
 
 #include <stdint.h>
 #include <math.h>

@@ -4,5 +4,11 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"common.h": "c",
+			"iio.h": "c",
+			"common_sp.h": "c"
+		}
+	}
 }

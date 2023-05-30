@@ -4,40 +4,40 @@
 #include <pthread.h>
 #include "signal_source.h"
 #include "rtl_sensor.h"
-#include "list.h"
-#include "log.h"
+#include "../tools/list.h"
+#include "../tools/log.h"
 
 struct _signal_holder
 {
-    const cmplx_u8* signal;
+    const cmplx_u8 *signal;
     int len;
 };
 
 static pthread_t worker_thread;
 static pthread_mutex_t callback_mutex;
-static struct list* callback_list = NULL;
-static struct rtl_dev* sensor = NULL;
+static struct list *callback_list = NULL;
+static struct rtl_dev *sensor = NULL;
 static volatile int running = 0;
 
-static void signal_source_callback_notifier(void* callback, void* signal)
+static void signal_source_callback_notifier(void *callback, void *signal)
 {
-    signal_source_callback f = (signal_source_callback) callback;
-    struct _signal_holder* s_h = (struct _signal_holder*) signal;
+    signal_source_callback f = (signal_source_callback)callback;
+    struct _signal_holder *s_h = (struct _signal_holder *)signal;
     f(s_h->signal, s_h->len);
 }
 
-static void rtl_async_callback(unsigned char* buf, uint32_t len, void* ctx)
+static void rtl_async_callback(unsigned char *buf, uint32_t len, void *ctx)
 {
-    struct _signal_holder s_h = { (cmplx_u8*) buf, len / 2 };
+    struct _signal_holder s_h = {(cmplx_u8 *)buf, len / 2};
     pthread_mutex_lock(&callback_mutex);
     list_apply2(callback_list, signal_source_callback_notifier, &s_h);
     pthread_mutex_unlock(&callback_mutex);
 }
 
-static void* worker(void* user)
+static void *worker(void *user)
 {
     int status = 0;
-    struct rtl_dev* dev = (struct rtl_dev*) user;
+    struct rtl_dev *dev = (struct rtl_dev *)user;
     char ctx = 0;
     DEBUG("Reading signal from sensor\n");
     if (running)
@@ -54,7 +54,7 @@ static void* worker(void* user)
     return NULL;
 }
 
-void signal_source_start(struct rtl_dev* dev)
+void signal_source_start(struct rtl_dev *dev)
 {
     DEBUG("Starting signal source...\n");
     if (running)

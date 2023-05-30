@@ -3,9 +3,9 @@
 #include <pthread.h>
 #include <math.h>
 #include "rf_decimator.h"
-#include "list.h"
+#include "../tools/list.h"
 #include "resample.h"
-#include "log.h"
+#include "../tools/log.h"
 
 #define INTERNAL_BUF_LEN_MS 100
 #define EPSILON 0.0001
