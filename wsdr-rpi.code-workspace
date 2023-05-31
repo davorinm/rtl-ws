@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "wsdr-rpi"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"common.h": "c",
+			"iio.h": "c",
+			"common_sp.h": "c",
+			"math.h": "c"
+		},
+		"makefile.launchConfigurations": [
+			{
+				"cwd": "/home/davorin/Projects/rtl-ws/wsdr-rpi/build",
+				"binaryPath": "/home/davorin/Projects/rtl-ws/wsdr-rpi/build/rtl-ws-server",
+				"binaryArgs": []
+			}
+		]
+	}
+}
