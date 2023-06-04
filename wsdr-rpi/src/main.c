@@ -3,20 +3,16 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include <libwebsockets.h>
 
 #include "tools/log.h"
-#include "signal/rtl_sensor.h"
+// #include "signal/rtl_sensor.h"
 
-#include "web/http_handler.h"
-#include "web/ws_handler.h"
+#include "web/web_handler.h"
 
 #include "dsp/rf_decimator.h"
 
 #include "audio_main.h"
 #include "dsp/cbb_main.h"
-
-#define PORT                    8090
 
 static volatile int force_exit = 0;
 
@@ -27,51 +23,24 @@ static void sighandler(int sig)
 
 int main(int argc, char **argv)
 {
-    int status = 0;
-    struct lws_context *context = NULL;
-    struct lws_context_creation_info info = { 0 };
-
     signal(SIGINT, sighandler);
     
     INFO("Initializing audio processing...\n");
     audio_init();
     
     INFO("Initializing complex baseband processing...\n");
-    cbb_init(DECIMATED_TARGET_BW_HZ);
+    cbb_init();
 
     rf_decimator_add_callback(cbb_rf_decimator(), audio_fm_demodulator);
 
-    // Init web socket
-    ws_init();
+    INFO("Initializing web service...\n");
+    web_init();
 
-    struct lws_protocols protos[] = { 
-        *get_http_protocol(), 
-        *get_ws_protocol()
-    };
-    
-    info.port = PORT;
-    info.protocols = protos;
-    info.extensions = NULL;
-
-    info.gid = -1;
-    info.uid = -1;
-
-    INFO("Initializing websockets...\n");
-    context = lws_create_context(&info);
-    if (context == NULL)
+    // Loop
+    while (!force_exit)
     {
-        ERROR("Websocket init failed\n");
-        return -1;
+        web_poll();
     }
-
-    while (status >= 0 && !force_exit)
-    {
-        status = lws_service(context, 10);
-    }
-
-
-    INFO("Closing web socket...\n");
-    ws_deinit();
     
     INFO("Closing complex baseband processing...\n");
     cbb_close();
@@ -79,8 +48,8 @@ int main(int argc, char **argv)
     INFO("Closing audio processing...\n");
     audio_close();
     
-    INFO("Destroying libwebsocket context\n");
-    lws_context_destroy(context);
+    INFO("Closing web context\n");
+    web_close();
 
     return 0;
 }

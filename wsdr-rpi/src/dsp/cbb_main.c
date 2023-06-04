@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <math.h>
+
+#include "cbb_main.h"
 #include "../tools/common.h"
 #include "../signal/rtl_sensor.h"
 #include "../spectrum.h"
@@ -10,7 +12,7 @@
 #include "../tools/log.h"
 #include "rf_decimator.h"
 #include "../tools/rate_logger.h"
-#include "cbb_main.h"
+#include "../settings.h"
 
 #define DEV_INDEX           0
 #define SPECTRUM_EST_MS     250
@@ -69,7 +71,7 @@ static void estimate_spectrum(const cmplx_u8* signal, int len)
     pthread_mutex_unlock(&spectrum_mutex);
 }
 
-void cbb_init(int decimated_bw_target_hz)
+void cbb_init()
 {
     cbb_rate_log = rate_logger_alloc();
     rate_logger_set_parameters(cbb_rate_log, "CBB", 60000);
@@ -77,7 +79,7 @@ void cbb_init(int decimated_bw_target_hz)
     rtl_init(&dev, DEV_INDEX);
 
     decim = rf_decimator_alloc();
-    rf_decimator_set_parameters(decim, rtl_sample_rate(dev), rtl_sample_rate(dev)/decimated_bw_target_hz);
+    rf_decimator_set_parameters(decim, rtl_sample_rate(dev), rtl_sample_rate(dev)/DECIMATED_TARGET_BW_HZ);
     
     pthread_mutex_init(&spectrum_mutex, NULL);
     spect = spectrum_alloc(FFT_POINTS);

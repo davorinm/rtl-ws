@@ -5,6 +5,7 @@
 #include "../dsp/cbb_main.h"
 #include "../audio_main.h"
 #include "../tools/log.h"
+#include "../settings.h"
 
 #define SEND_BUFFER_SIZE        16384
 

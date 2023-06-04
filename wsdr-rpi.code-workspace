@@ -9,7 +9,11 @@
 			"common.h": "c",
 			"iio.h": "c",
 			"common_sp.h": "c",
-			"math.h": "c"
+			"math.h": "c",
+			"libwebsockets.h": "c",
+			"rf_decimator.h": "c",
+			"log.h": "c",
+			"mongoose.h": "c"
 		},
 		"makefile.launchConfigurations": [
 			{

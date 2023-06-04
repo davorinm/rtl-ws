@@ -24,7 +24,7 @@ all: clean build
 	
 $(PROGRAM): $(COBJFILES) $(CPPOBJFILES)
 	$(link) 
-	@ls -lh build/rtl-ws-server >> build.txt
+	@ls -l build/rtl-ws-server >> build.txt
 
 $(BUILDDIR)/%.o: %.c
 	@mkdir -p $(dir $@)

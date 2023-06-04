@@ -7,3 +7,17 @@
 -rwxr-xr-x 1 davorin davorin 52K May 31 00:21 build/rtl-ws-server
 -rwxr-xr-x 1 davorin davorin 52K May 31 10:47 build/rtl-ws-server
 -rwxr-xr-x 1 davorin davorin 52K May 31 12:01 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 48K Jun  4 18:30 wsdr
+-rwxr-xr-x 1 davorin davorin 52K Jun  4 22:03 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 228K Jun  4 22:04 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 228K Jun  4 22:13 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 232584 Jun  4 22:14 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 232896 Jun  4 22:54 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 232896 Jun  4 22:57 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 232984 Jun  4 23:12 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 232984 Jun  4 23:23 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 237328 Jun  4 23:27 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 237328 Jun  4 23:30 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 237328 Jun  4 23:30 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 237328 Jun  4 23:31 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 237328 Jun  4 23:32 build/rtl-ws-server
