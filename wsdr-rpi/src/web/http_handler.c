@@ -4,11 +4,6 @@
 #include "http_handler.h"
 #include "../settings.h"
 
-struct per_session_data__http
-{
-    int fd;
-};
-
 static const char *get_mimetype(const char *file)
 {
     int n = strlen(file);
@@ -34,7 +29,7 @@ static const char *get_mimetype(const char *file)
     return NULL;
 }
 
-static int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
+int http_handler_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
 {
     static unsigned char buffer[4096];
     char buf[256];
@@ -156,14 +151,4 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void
     }
 
     return 0;
-}
-
-static struct lws_protocols http_protocol = {
-    "http-only",
-    callback_http,
-    sizeof(struct per_session_data__http)};
-
-struct lws_protocols *get_http_protocol()
-{
-    return &http_protocol;
 }

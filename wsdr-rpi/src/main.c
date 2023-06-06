@@ -5,12 +5,8 @@
 #include <unistd.h>
 
 #include "tools/log.h"
-// #include "signal/rtl_sensor.h"
-
 #include "web/web_handler.h"
-
 #include "dsp/rf_decimator.h"
-
 #include "audio_main.h"
 #include "dsp/cbb_main.h"
 
@@ -24,10 +20,10 @@ static void sighandler(int sig)
 int main(int argc, char **argv)
 {
     signal(SIGINT, sighandler);
-    
+
     INFO("Initializing audio processing...\n");
     audio_init();
-    
+
     INFO("Initializing complex baseband processing...\n");
     cbb_init();
 
@@ -41,15 +37,15 @@ int main(int argc, char **argv)
     {
         web_poll();
     }
-    
-    INFO("Closing complex baseband processing...\n");
-    cbb_close();
-    
-    INFO("Closing audio processing...\n");
-    audio_close();
-    
+
     INFO("Closing web context\n");
     web_close();
+
+    INFO("Closing complex baseband processing...\n");
+    cbb_close();
+
+    INFO("Closing audio processing...\n");
+    audio_close();
 
     return 0;
 }

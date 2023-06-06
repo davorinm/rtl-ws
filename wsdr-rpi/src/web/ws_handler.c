@@ -24,14 +24,7 @@ static volatile int spectrum_gain = 0;
 
 static char* send_buffer = NULL;
 
-struct per_session_data__rtl_ws {
-    int id;
-    int send_data;
-    int audio_data;
-    int sent_audio_fragments;
-};
-
-static int callback_ws(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
+int ws_handler_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
 {
     int f = 0;
     int bw = 0;
@@ -177,17 +170,6 @@ static int callback_ws(struct lws *wsi, enum lws_callback_reasons reason, void *
     }
 
     return 0;
-}
-
-static struct lws_protocols ws_protocol = {
-    "rtl-ws-protocol",
-    callback_ws,
-    sizeof(struct per_session_data__rtl_ws)
-};
-
-struct lws_protocols* get_ws_protocol()
-{
-    return &ws_protocol;
 }
 
 void ws_deinit() {

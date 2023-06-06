@@ -17,7 +17,11 @@ struct mg_mgr mgr;
 static struct lws_context *context = NULL;
 static struct lws_context_creation_info info = {0};
 
-int status = 0;
+static struct lws_protocols protos[] = {
+    {"http-only", http_handler_callback, sizeof(struct per_session_data__http)},
+    {"rtl-ws-protocol", ws_handler_callback, sizeof(struct per_session_data__rtl_ws)}};
+
+static int status = 0;
 
 // This RESTful server implements the following endpoints:
 //   /websocket - upgrade to Websocket, and implement websocket echo server
@@ -76,17 +80,12 @@ static void push(struct mg_mgr *mgr, const char *name, const void *data)
 
 void web_init()
 {
-
-    mg_mgr_init(&mgr); // Initialise event manager
-    printf("Starting WS listener on %s/websocket\n", s_listen_on);
-    mg_http_listen(&mgr, s_listen_on, fn, NULL); // Create HTTP listener
+    // mg_mgr_init(&mgr); // Initialise event manager
+    // printf("Starting WS listener on %s/websocket\n", s_listen_on);
+    // mg_http_listen(&mgr, s_listen_on, fn, NULL); // Create HTTP listener
 
     // Init web socket
     ws_init();
-
-    struct lws_protocols protos[] = {
-        *get_http_protocol(),
-        *get_ws_protocol()};
 
     info.port = PORT;
     info.protocols = protos;
@@ -107,7 +106,7 @@ void web_init()
 void web_poll()
 {
     // mongoose loop
-    mg_mgr_poll(&mgr, 1000);
+    // mg_mgr_poll(&mgr, 1000);
 
     status = lws_service(context, 10);
     if (status < 0)
@@ -118,7 +117,7 @@ void web_poll()
 
 void web_close()
 {
-    mg_mgr_free(&mgr);
+    // mg_mgr_free(&mgr);
 
     INFO("Closing web socket...\n");
     ws_deinit();
