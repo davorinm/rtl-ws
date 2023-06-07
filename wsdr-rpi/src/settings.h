@@ -5,7 +5,7 @@
 #define PORT 8090
 
 // HTML default path
-#define MAIN_HTML "/rtl-ui.html"
+#define MAIN_HTML "/index.html"
 
 // HTML resources
 #define HTML_PATH "./resources"

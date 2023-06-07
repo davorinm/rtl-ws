@@ -8,14 +8,6 @@ PROGRAM=$(BUILDDIR)/rtl-ws-server
 CSOURCEFILES=$(shell find $(SRCDIR) -iname \*.c)
 COBJFILES=$(subst .c,.o,$(subst $(SRCDIR),$(BUILDDIR),$(CSOURCEFILES)))
 
-define compilec
-$(GCC) $(PPDEFS) -c -B $(SRCDIR) $< -o $@
-endef
-
-define link
-$(GCC) $^ -lpthread -lwebsockets -lrtlsdr -lrt -lm -lfftw3 -o $@
-endef
-
 .PHONY: all build prepare clean run
 
 build: $(PROGRAM)
@@ -23,12 +15,12 @@ build: $(PROGRAM)
 all: clean build
 	
 $(PROGRAM): $(COBJFILES) $(CPPOBJFILES)
-	$(link) 
+	$(GCC) $^ -lpthread -lwebsockets -lrtlsdr -lrt -lm -lfftw3 -o $@
 	@ls -l build/rtl-ws-server >> build.txt
 
 $(BUILDDIR)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(compilec)
+	$(GCC) $(PPDEFS) -c -B $(SRCDIR) $< -o $@
 
 prepare:
 	mkdir -p $(BUILDDIR)
