@@ -12,8 +12,16 @@ project(wsdr VERSION 2.6.0 LANGUAGES C)
 #set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 
-SET(CMAKE_C_FLAGS "-O3 -ffast-math -funroll-loops")
+set(CMAKE_C_FLAGS "-O3 -ffast-math -funroll-loops")
 
+set(LWS_WITH_SSL 0)
+set(LWS_WITH_TLS 0)
+set(LWS_WITH_SHARED 0)
+# set(LWS_PLAT_BAREMETAL 1)
+# set(LWS_WITH_NETWORK 0)
+# set(LWS_ONLY_SSPC 0) # remove everything except SSPC pieces from library build
+
+add_subdirectory(libwebsockets)
 add_executable(wsdr
   src/main.c
   src/spectrum.c
@@ -28,7 +36,18 @@ add_executable(wsdr
   src/tools/rate_logger.c
   src/web/http_handler.c
   src/web/ws_handler.c
+  src/web/web_handler.c
 )
+
+# make sure we can include libwebsockets.h from the lws build
+target_include_directories(wsdr PRIVATE
+        # lws_config.h generated into here
+        ${PROJECT_BINARY_DIR}/libwebsockets
+        # source includes will do for everything else
+        ${PROJECT_SOURCE_DIR}/libwebsockets/include )
+
+# target_link_libraries(wsdr
+#                         websockets)
 
 target_link_libraries(wsdr PRIVATE rtlsdr)
 target_link_libraries(wsdr PRIVATE pthread)
@@ -48,5 +67,5 @@ add_compile_options(-Wextra)
 # size
 add_custom_command(TARGET wsdr
         POST_BUILD
-        COMMAND /bin/ls -lh wsdr >> ../build.txt
+        COMMAND /bin/ls -l wsdr >> ../build.txt
         )
