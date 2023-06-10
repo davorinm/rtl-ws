@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.12)
 project(wsdr VERSION 2.6.0 LANGUAGES C)
 
 # default build type
-#if(NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
-#endif()
+endif()
 
 # prevent agressive and unsafe optimizations
 # (by default CMake uses -O3 level)
@@ -16,8 +16,16 @@ set(CMAKE_C_FLAGS "-O3 -ffast-math -funroll-loops")
 
 set(LWS_WITH_SSL 0)
 set(LWS_WITH_TLS 0)
+set(LWS_WITH_STATIC 1)
 set(LWS_WITH_SHARED 0)
 # set(LWS_PLAT_BAREMETAL 1)
+# set(LWS_WITH_SECURE_STREAMS 0)
+# set(LWS_WITHOUT_EXTENSIONS 1)
+# set(LWS_WITHOUT_CLIENT 1)
+# set(LWS_WITH_LHP 0)
+# set(LWS_WITHOUT_CLIENT 1)
+set(LWS_WITHOUT_TESTAPPS 1)
+
 # set(LWS_WITH_NETWORK 0)
 # set(LWS_ONLY_SSPC 0) # remove everything except SSPC pieces from library build
 
