@@ -15,7 +15,7 @@ build: $(PROGRAM)
 all: clean build
 	
 $(PROGRAM): $(COBJFILES) $(CPPOBJFILES)
-	$(GCC) $^ -lpthread -lwebsockets -lrtlsdr -lrt -lm -lfftw3 -o $@
+	$(GCC) $^ -lpthread -lrtlsdr -lrt -lm -lfftw3 -o $@
 	@ls -l build/rtl-ws-server >> build.txt
 
 $(BUILDDIR)/%.o: %.c
@@ -31,5 +31,3 @@ clean:
 run: build
 	open http://localhost:8090
 	./build/rtl-ws-server
-	
-

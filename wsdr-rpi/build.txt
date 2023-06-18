@@ -2,3 +2,14 @@
 -rwxr-xr-x 1 davorin davorin 562832 Jun  8 00:14 wsdr
 -rwxr-xr-x 1 davorin davorin 562832 Jun  8 00:19 wsdr
 -rwxr-xr-x 1 davorin davorin 562832 Jun  8 00:25 wsdr
+-rwxr-xr-x 1 davorin davorin 237184 Jun 16 12:48 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 237184 Jun 16 12:49 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 237184 Jun 16 12:53 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 237184 Jun 16 13:07 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 237184 Jun 16 13:18 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 231776 Jun 17 17:46 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 231776 Jun 17 17:46 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 231776 Jun 17 17:54 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 231776 Jun 18 13:47 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 231776 Jun 18 13:48 build/rtl-ws-server
+-rwxr-xr-x 1 davorin davorin 231776 Jun 18 13:51 build/rtl-ws-server

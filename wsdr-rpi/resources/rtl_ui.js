@@ -69,7 +69,7 @@ function getAudio(output, length) {
 }
 
 function initialize() {
-    socket_lm = new WebSocket(get_appropriate_ws_url(), "rtl-ws-protocol");
+    socket_lm = new WebSocket(get_appropriate_ws_url() + "/websocket", "rtl-ws-protocol");
     console.log("WebSocket instantiated");
     try {
         socket_lm.binaryType = "arraybuffer";

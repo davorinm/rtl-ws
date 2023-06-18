@@ -1,7 +1,7 @@
 #ifndef WS_HANDLER_H
 #define WS_HANDLER_H
 
-#include <libwebsockets.h>
+#include "../mongoose/mongoose.h"
 
 struct per_session_data__rtl_ws {
     int id;
@@ -10,7 +10,9 @@ struct per_session_data__rtl_ws {
     int sent_audio_fragments;
 };
 
-int ws_handler_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
+void ws_handler_data(struct mg_connection *c, struct per_session_data__rtl_ws *pss);
+
+void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, struct per_session_data__rtl_ws *pss);
 
 void ws_deinit();
 
