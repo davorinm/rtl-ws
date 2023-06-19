@@ -1,15 +1,19 @@
 #include "web_handler.h"
 
+#include <unistd.h>
+#include <pthread.h>
 #include "ws_handler.h"
 #include "../settings.h"
 #include "../tools/log.h"
 #include "../mongoose/mongoose.h"
 
 static const char *s_listen_on = "localhost:8000";
-static const char *s_web_root = "./resources";
+static const char *s_web_root = "/home/davorin/Projects/rtl-ws/wsdr-rpi/resources";
 
 // Mongoose event manager
 struct mg_mgr mgr;
+
+pthread_t worker_thread;
 
 // This RESTful server implements the following endpoints:
 //   /websocket - upgrade to Websocket, and implement websocket echo server
@@ -38,6 +42,11 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
             mg_http_serve_dir(c, ev_data, &opts);
         }
     }
+    else if (ev == MG_EV_WRITE)
+    {
+        int64_t t = *(int64_t *)ev_data;
+        MG_INFO(("MG_EV_WRITE bytes_written: %lld", t));
+    }
     else if (ev == MG_EV_WS_OPEN)
     {
         INFO("MG_EV_WS_OPEN\n");
@@ -53,10 +62,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
         // Got websocket frame. Received data is wm->data. Echo it back!
         struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
 
-
-        printf("GOT ECHO REPLY: [%.*s]\n", (int) wm->data.len, wm->data.ptr);
-
-        mg_ws_send(c, wm->data.ptr, wm->data.len, WEBSOCKET_OP_TEXT);
+        printf("GOT CMD: [%.*s]\n", (int)wm->data.len, wm->data.ptr);
 
         struct per_session_data__rtl_ws *pss = (struct per_session_data__rtl_ws *)fn_data;
         ws_handler_callback(c, wm, pss);
@@ -64,60 +70,81 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
     else if (ev == MG_EV_WS_CTL)
     {
         INFO("MG_EV_WS_CTL\n");
+        struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
+        printf("GOT CTRL: [%.*s]\n", (int)wm->data.len, wm->data.ptr);
     }
 
     (void)fn_data;
 }
 
-static void timer_fn(void *arg)
+static int force_exit = 0;
+
+static void *timer_fn(void *arg)
 {
-    struct mg_mgr *mgr = (struct mg_mgr *)arg;
-
-    // Get first connection
-    if (mgr->conns == NULL) {
-        INFO("No conns\n");
-        return;
-    }
-
-    struct mg_connection *c = mgr->conns;
-
-
-    if (c->fn_data == NULL) {
-        INFO("No sessin data\n");
-        return;
-    }
-    
-    struct per_session_data__rtl_ws *pss = (struct per_session_data__rtl_ws *)c->fn_data;
-
-    ws_handler_data(c, pss);
-
-
-    // Broadcast "hi" message to all connected websocket clients.
-    // Traverse over all connections
-    for (struct mg_connection *c = mgr->conns; c != NULL; c = c->next)
+    while (!force_exit)
     {
-        // Send only to marked connections
-        if (c->data[0] == 'W') {
-            mg_ws_send(c, "hi", 2, WEBSOCKET_OP_TEXT);
+        usleep(100000);
+
+        // INFO("W\n");
+        struct mg_mgr *mgr = (struct mg_mgr *)arg;
+
+        // Get first connection
+        if (mgr->conns == NULL)
+        {
+            INFO("No conns\n");
+            continue;
         }
+
+        struct mg_connection *c = mgr->conns;
+
+        if (c->fn_data == NULL)
+        {
+            // INFO("No sessin data\n");
+            continue;
+        }
+
+        // if (!c->is_writable) {
+        //     INFO("Connection is writable %i\n", c->is_writable);
+        //     continue;
+        // }
+
+        struct per_session_data__rtl_ws *pss = (struct per_session_data__rtl_ws *)c->fn_data;
+        ws_handler_data(c, pss);
+
+        // Broadcast "hi" message to all connected websocket clients.
+        // Traverse over all connections
+        // for (struct mg_connection *c = mgr->conns; c != NULL; c = c->next)
+        // {
+        //     // Send only to marked connections
+        //     if (c->data[0] == 'W') {
+        //         mg_ws_send(c, "hi", 2, WEBSOCKET_OP_TEXT);
+        //     }
+        // }
     }
 }
 
 void web_init()
 {
+    int err;
+
     INFO("Initializing web server...\n");
+    ws_init();
 
     // Mongoose init
-    mg_mgr_init(&mgr); // Initialise event manager  
-    mg_log_set(MG_LL_DEBUG);  // Set log level
+    mg_mgr_init(&mgr); // Initialise event manager
+    // mg_log_set(MG_LL_DEBUG);  // Set log level
 
     printf("Starting WS listener on %s/websocket\n", s_listen_on);
 
-    // Timer
-    mg_timer_add(&mgr, 1000, MG_TIMER_REPEAT, timer_fn, &mgr);
-
     // Create HTTP listener
     mg_http_listen(&mgr, s_listen_on, fn, NULL);
+
+    // Worker
+    err = pthread_create(&worker_thread, NULL, timer_fn, (void *)&mgr);
+    if (err)
+    {
+        printf("An error occured: %d", err);
+    }
 }
 
 void web_poll()
@@ -128,6 +155,14 @@ void web_poll()
 
 void web_close()
 {
+    force_exit = 1;
+
+    printf("Waiting for the thread to end...\n");
+    pthread_join(worker_thread, NULL);
+    printf("Thread ended.\n");
+
     INFO("Closing web server...\n");
     mg_mgr_free(&mgr);
+
+    ws_deinit();
 }

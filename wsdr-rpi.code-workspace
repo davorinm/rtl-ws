@@ -13,7 +13,8 @@
 			"libwebsockets.h": "c",
 			"rf_decimator.h": "c",
 			"log.h": "c",
-			"mongoose.h": "c"
+			"mongoose.h": "c",
+			"unistd.h": "c"
 		},
 		"makefile.launchConfigurations": [
 			{
