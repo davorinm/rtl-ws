@@ -14,7 +14,8 @@
 			"rf_decimator.h": "c",
 			"log.h": "c",
 			"mongoose.h": "c",
-			"unistd.h": "c"
+			"unistd.h": "c",
+			"pthread.h": "c"
 		},
 		"makefile.launchConfigurations": [
 			{

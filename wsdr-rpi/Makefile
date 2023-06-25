@@ -2,6 +2,7 @@ SRCDIR=src
 BUILDDIR=build
 VPATH=$(SRCDIR)
 PERF_OPTS=-O3 -ffast-math -funroll-loops
+PERF_LIBS=-lpthread -lrtlsdr -lrt -lm -lfftw3
 GCC=gcc $(PERF_OPTS)
 PPDEFS=-DRTL_WS_DEBUG
 PROGRAM=$(BUILDDIR)/rtl-ws-server
@@ -15,7 +16,7 @@ build: $(PROGRAM)
 all: clean build
 	
 $(PROGRAM): $(COBJFILES) $(CPPOBJFILES)
-	$(GCC) $^ -lpthread -lrtlsdr -lrt -lm -lfftw3 -o $@
+	$(GCC) $^ $(PERF_LIBS) -o $@
 	@ls -l build/rtl-ws-server >> build.txt
 
 $(BUILDDIR)/%.o: %.c

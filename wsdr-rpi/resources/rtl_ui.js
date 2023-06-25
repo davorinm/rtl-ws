@@ -26,51 +26,8 @@ for (var idx = 0; idx < 200; idx++) {
 var spectrogram_idx = -1;
 var spectrogram_image;
 var sound_on = false;
-var audioBufferSize = 4096;
-var playbackNode;
-var audioBufferQueue = [];
+var samplesProcessorNode;
 var audioContext;
-
-function getAudio(output, length) {
-    console.log("Requesting " + length + " output size");
-
-    var offset = 0;
-    while (offset < length) {
-        var buf = audioBufferQueue.shift();
-        if (buf != null) {
-            console.log("Queued buffer size " + buf.length);
-            if (buf.length > length) {
-                console.log("Buffer is larger than ouput");
-                for (var i = 0; i < buf.length; i++) {
-                    output[offset++] = buf[i];
-                }
-
-                console.log("Return unused buffer part " + offset - 1);
-                audioBufferQueue.unshift(buf.slice(offset - 1, buf.length - 1));
-
-            } else if (buf.length < length) {
-                console.log("Buffer is smaller than ouput");
-                for (var i = 0; i < buf.length; i++) {
-                    output[offset++] = buf[i];
-                }
-            } else if (buf.length == length) {
-                console.log("Buffer fits");
-                for (var i = 0; i < buf.length; i++) {
-                    output[offset++] = buf[i];
-                }
-            } else {
-                console.log("Odd thing buf.length:" + buf.length + " , length: " + length);
-            }
-        } else {
-            console.log("No more data, filling listening buffer with " + (length - offset) + " zeros)");
-            for (var i = offset; i < length; i++) {
-                output[offset++] = 0;
-            }
-        }
-    }
-}
-
-var bufferTimeDuration = 0;
 
 function initialize() {
     socket_lm = new WebSocket(get_appropriate_ws_url() + "/websocket", "rtl-ws-protocol");
@@ -109,41 +66,13 @@ function initialize() {
                 }
                 ctx.stroke();
                 ctx.closePath();
+
+                update_spectrogram();
             } else if (firstChar == 'A') {
                 // Audio
                 var audioArray = new Float32Array(msg.data, 4);
-                // if (audioBufferQueue.length >= 50) {
-                //     console.log("Dropping data (latest audioarray " + audioArray.length + " samples)");
-                //     audioBufferQueue = [];
-                // }
-                // console.log("audioBufferQueue push samples: " + audioArray.length);
-                // audioBufferQueue.push(audioArray);
-
-
-
-                var audioArrayBuffer = audioContext.createBuffer(1, audioArray.length, audioContext.sampleRate);
-                audioArrayBuffer.copyToChannel(audioArray, 0, 0);
-                    
-                
-
-                // Get an AudioBufferSourceNode.
-                // This is the AudioNode to use when we want to play an AudioBuffer
-                const source = audioContext.createBufferSource();
-                // set the buffer in the AudioBufferSourceNode
-                source.buffer = audioArrayBuffer;
-
-                source.connect(audioContext.destination);
-
-                if (bufferTimeDuration == 0) {
-                    source.start();
-                } else {
-                    // Calc time
-                    bufferTimeDuration = audioArray.length / audioContext.sampleRate;
-
-                    var t = shared.audioCtx.currentTime;
-                    source.start(bufferTimeDuration - t);
-                }
-
+                // samplesProcessorNode.port.postMessage({ audioArray });
+                samplesProcessorNode.port.postMessage(audioArray);
             }
 
             return;
@@ -238,8 +167,6 @@ function initialize() {
 
     document.getElementById('spectrum').appendChild(canvas);
 
-    setInterval(update_spectrogram, 250);
-
     document.getElementById("toggle_sound").disabled = true;
 }
 
@@ -287,13 +214,11 @@ function update_spectrogram() {
 }
 
 function frequency_change() {
-    audioBufferQueue = [];
     frequency = document.getElementById("frequency").value;
     socket_lm.send("freq " + frequency);
 }
 
 function bw_change() {
-    audioBufferQueue = [];
     bandwidth = document.getElementById("bandwidth").value;
     socket_lm.send("bw " + bandwidth);
 }
@@ -318,34 +243,25 @@ function start_or_stop() {
     document.getElementById("toggle_sound").disabled = !started;
 }
 
-var audioChannels = 1;
-var frameCount;
-
-function initialize_sound() {
-    try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
-    } catch (e) {
-        alert('Web Audio API is not supported in this browser');
-    }
-
-    console.log("Audio sample rate is " + audioContext.sampleRate + " Hz");
-    if (audioContext.sampleRate != 48000) {
-        alert("Audio sample rate should be 24 kHz for playback");
-    }
-
-    frameCount = audioContext.sampleRate * audioChannels;
-
+async function initialize_sound() {
+    audioContext = new AudioContext();
+    await audioContext.audioWorklet.addModule("./samples-processor.js");
+    
+    samplesProcessorNode = new AudioWorkletNode(audioContext, "samples-processor");
 }
 
-function toggle_sound() {
+async function toggle_sound() {
     var value = document.getElementById("toggle_sound").value;
     socket_lm.send(value);
+    
     if (value == "start_audio") {
         sound_on = true;
         document.getElementById("toggle_sound").value = "stop_audio";
-        initialize_sound();
+        await initialize_sound();
+        samplesProcessorNode.connect(audioContext.destination);
     } else {
         sound_on = false;
         document.getElementById("toggle_sound").value = "start_audio";
+        samplesProcessorNode.disconnect();
     }
 }

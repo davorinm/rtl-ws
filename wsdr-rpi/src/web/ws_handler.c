@@ -7,7 +7,7 @@
 #include "../tools/log.h"
 #include "../settings.h"
 
-#define SEND_BUFFER_SIZE 1024 * 32
+#define SEND_BUFFER_SIZE 1024 * 64
 
 #define FREQ_CMD "freq"
 #define SAMPLE_RATE_CMD "bw"
@@ -34,7 +34,7 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
     struct mg_str command = wm->data;
     MG_INFO(("Got command: %.*s", (int)command.len, command.ptr));
 
-    if (mg_strstr(command, mg_str(FREQ_CMD)))//strncmp(s1->ptr
+    if (mg_strstr(command, mg_str(FREQ_CMD))) // strncmp(s1->ptr
     {
         f = atoi(&command.ptr[strlen(FREQ_CMD)]) * 1000;
         INFO("Trying to tune to %d Hz...\n", f);
@@ -104,25 +104,22 @@ void ws_handler_data(struct mg_connection *c, struct per_session_data__rtl_ws *p
             // Send data
             nnn = mg_ws_send(c, send_buffer, n + nn, WEBSOCKET_OP_BINARY);
         }
-        
+
         if (pss->audio_data == 1 && audio_new_audio_available())
         {
-            INFO("ws_handler_data send audio\n");
-
             // Clear buffer
             memset(send_buffer, 0, SEND_BUFFER_SIZE);
 
             // Set meta data
             n = sprintf(send_buffer, "A   ");
 
-            int bufferSize = 4096 * 2; //SEND_BUFFER_SIZE - n;
-
             // Write audio
-            nn = audio_get_audio_payload(send_buffer + n, bufferSize);
-            INFO("Audio size %d, buffer size %d\n", nn, bufferSize);
+            nn = audio_get_audio_payload(send_buffer + n, SEND_BUFFER_SIZE - n);
 
             // Send data
             nnn = mg_ws_send(c, send_buffer, n + nn, WEBSOCKET_OP_BINARY);
+
+            INFO("Audio header size %d, audio size %d, audio buffer size %d, socet size %d\n", n, nn, n + nn, nnn);
         }
     }
 
