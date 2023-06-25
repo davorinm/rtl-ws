@@ -71,7 +71,6 @@ function initialize() {
             } else if (firstChar == 'A') {
                 // Audio
                 var audioArray = new Float32Array(msg.data, 4);
-                // samplesProcessorNode.port.postMessage({ audioArray });
                 samplesProcessorNode.port.postMessage(audioArray);
             }
 
@@ -244,7 +243,7 @@ function start_or_stop() {
 }
 
 async function initialize_sound() {
-    audioContext = new AudioContext();
+    audioContext = new AudioContext({sampleRate: 48000});
     await audioContext.audioWorklet.addModule("./samples-processor.js");
     
     samplesProcessorNode = new AudioWorkletNode(audioContext, "samples-processor");

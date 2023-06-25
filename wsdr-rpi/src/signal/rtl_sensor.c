@@ -5,9 +5,8 @@
 
 #include "rtl_sensor.h"
 #include "../tools/log.h"
+#include "../settings.h"
 
-#define RTL_DEFAULT_SAMPLE_RATE 2048000
-#define RTL_DEFAULT_FREQUENCY 102800000
 #define RTL_DEFAULT_GAIN 25.4
 
 struct rtl_dev
