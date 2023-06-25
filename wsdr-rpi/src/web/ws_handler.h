@@ -7,6 +7,7 @@ struct per_session_data__rtl_ws {
     int id;
     int send_data;
     int audio_data;
+    int update_client;
 };
 
 void ws_handler_data(struct mg_connection *c, struct per_session_data__rtl_ws *pss);

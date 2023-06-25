@@ -46,8 +46,7 @@ function initialize() {
 
             if (firstChar == 'S') {
                 // Spectrum
-
-                var bytearray = new Uint8Array(msg.data, 1);
+                const bytearray = new Uint8Array(msg.data, 1);
 
                 ctx.clearRect(0, 0, 1030, 315);
                 spectrogram_idx++;
@@ -68,38 +67,25 @@ function initialize() {
                 ctx.closePath();
 
                 update_spectrogram();
-            } else if (firstChar == 'A') {
+            }
+            else if (firstChar == 'A') {
                 // Audio
-                var audioArray = new Float32Array(msg.data, 4);
+                const audioArray = new Float32Array(msg.data, 4);
                 samplesProcessorNode.port.postMessage(audioArray);
             }
+            else if (firstChar == 'T') {
+                // Tuner
+                const bytearray = new Uint8Array(msg.data, 1);
+                const strData = String.fromCharCode(...bytearray);
+                const j = strData.split(';');
 
-            return;
+                let f = 0;
+                let redraw_hz_axis = false;
 
+                while (f < j.length) {
+                    const i = j[f++].split(' ');
 
-            var data_type = "";
-            var bytearray = new Uint8Array(msg.data);
-            var header = "";
-            var readChar = '0';
-            var header_len = 0;
-            while (readChar != 'd') {
-                readChar = String.fromCharCode(bytearray[header_len++]);
-                header += readChar;
-            }
-
-            j = header.split(';');
-            f = 0;
-            var redraw_hz_axis = false;
-            while (f < j.length) {
-                if (j[f].charAt(0) != 'F') {
-                    i = j[f].split(' ');
-                    if (i[0] == 'd') {
-                        if (data_type == "s") {
-
-                        } else if (data_type == "a") {
-
-                        }
-                    } else if (i[0] == 'b') {
+                    if (i[0] == 'b') {
                         var bw_element = document.getElementById("bandwidth");
                         if ((bw_element.value * 1000) != i[1]) {
                             bw_element.style.color = "lightgray";
@@ -125,25 +111,30 @@ function initialize() {
                             spectrumgain_element.style.color = "black";
                             real_spectrumgain = parseInt(spectrumgain);
                         }
-                    } else if (i[0] == 't') {
-                        data_type = i[1];
                     }
                 }
-                f++;
-            }
 
-            if (redraw_hz_axis) {
-                ctx.font = "10px Georgia";
-                ctx.fillStyle = "black";
-                var freqtext = (real_frequency - real_bandwidth / 2) / 1000 + " MHz";
-                var w = ctx.measureText(freqtext).width;
-                ctx.fillText(freqtext, 0, 300);
-                freqtext = (real_frequency) / 1000 + " MHz";
-                w = ctx.measureText(freqtext).width;
-                ctx.fillText(freqtext, 512 - w / 2, 300);
-                freqtext = (real_frequency + real_bandwidth / 2) / 1000 + " MHz";
-                w = ctx.measureText(freqtext).width;
-                ctx.fillText(freqtext, 1024 - w, 300);
+                if (redraw_hz_axis) {
+                    ctx.font = "10px Georgia";
+                    ctx.fillStyle = "black";
+                    var freqtext = (real_frequency - real_bandwidth / 2) / 1000 + " MHz";
+                    var w = ctx.measureText(freqtext).width;
+                    ctx.fillText(freqtext, 0, 300);
+                    freqtext = (real_frequency) / 1000 + " MHz";
+                    w = ctx.measureText(freqtext).width;
+                    ctx.fillText(freqtext, 512 - w / 2, 300);
+                    freqtext = (real_frequency + real_bandwidth / 2) / 1000 + " MHz";
+                    w = ctx.measureText(freqtext).width;
+                    ctx.fillText(freqtext, 1024 - w, 300);
+
+
+                    ctx.beginPath();
+                    ctx.lineWidth = "1";
+                    ctx.fillStyle = "lightgray";
+                    ctx.arc(conn_counter * 5 + 5, 5, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.closePath();
+                }
             }
         }
 
@@ -243,16 +234,16 @@ function start_or_stop() {
 }
 
 async function initialize_sound() {
-    audioContext = new AudioContext({sampleRate: 48000});
-    await audioContext.audioWorklet.addModule("./samples-processor.js");
-    
+    audioContext = new AudioContext({ sampleRate: 48000 });
+    await audioContext.audioWorklet.addModule("samples-processor.js");
+
     samplesProcessorNode = new AudioWorkletNode(audioContext, "samples-processor");
 }
 
 async function toggle_sound() {
     var value = document.getElementById("toggle_sound").value;
     socket_lm.send(value);
-    
+
     if (value == "start_audio") {
         sound_on = true;
         document.getElementById("toggle_sound").value = "stop_audio";

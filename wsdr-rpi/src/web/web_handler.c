@@ -45,7 +45,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
     else if (ev == MG_EV_WRITE)
     {
         int64_t t = *(int64_t *)ev_data;
-        MG_INFO(("MG_EV_WRITE bytes_written: %lld", t));
+        // MG_INFO(("MG_EV_WRITE bytes_written: %lld", t));
     }
     else if (ev == MG_EV_WS_OPEN)
     {
@@ -53,6 +53,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
         c->data[0] = 'W'; // Mark this connection as an established WS client
 
         struct per_session_data__rtl_ws *pss = calloc(1, sizeof(struct per_session_data__rtl_ws));
+        pss->update_client = 1;
         c->fn_data = pss;
     }
     else if (ev == MG_EV_WS_MSG)
@@ -83,7 +84,7 @@ static void *timer_fn(void *arg)
 {
     while (!force_exit)
     {
-        usleep(100000);
+        usleep(50000);
 
         // INFO("W\n");
         struct mg_mgr *mgr = (struct mg_mgr *)arg;
@@ -145,6 +146,8 @@ void web_init()
     {
         printf("An error occured: %d", err);
     }
+
+
 }
 
 void web_poll()

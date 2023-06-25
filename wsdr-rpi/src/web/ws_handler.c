@@ -79,53 +79,97 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
     }
 
     free(in_buffer);
+
+    // Something did change, update client
+    pss->update_client = 1;
+}
+
+static void ws_update_spectrum(struct mg_connection *c)
+{
+    int n = 0, nn = 0, nnn = 0;
+
+    // Clear buffer
+    memset(send_buffer, 0, SEND_BUFFER_SIZE);
+
+    // Set meta data
+    n = sprintf(send_buffer, "S");
+
+    // Write spectrum
+    nn = cbb_get_spectrum_payload(send_buffer + n, SEND_BUFFER_SIZE - n, spectrum_gain);
+
+    // Send data
+    nnn = mg_ws_send(c, send_buffer, n + nn, WEBSOCKET_OP_BINARY);
+
+    if (nnn < 0)
+    {
+        ERROR("Writing failed, error code == %d\n", nnn);
+    }
+}
+
+static void ws_update_audio(struct mg_connection *c)
+{
+    int n = 0, nn = 0, nnn = 0;
+
+    // Clear buffer
+    memset(send_buffer, 0, SEND_BUFFER_SIZE);
+
+    // Set meta data
+    n = sprintf(send_buffer, "A   ");
+
+    // Write audio
+    nn = audio_get_audio_payload(send_buffer + n, SEND_BUFFER_SIZE - n);
+
+    // Send data
+    nnn = mg_ws_send(c, send_buffer, n + nn, WEBSOCKET_OP_BINARY);
+
+    if (nnn < 0)
+    {
+        INFO("Audio header size %d, audio size %d, audio buffer size %d, socet size %d\n", n, nn, n + nn, nnn);
+        ERROR("Writing failed, error code == %d\n", nnn);
+    }
+}
+
+static void ws_update_client(struct mg_connection *c)
+{
+    int n = 0, nn = 0, nnn = 0;
+    struct rtl_dev *dev = cbb_get_rtl_dev();
+
+    // Clear buffer
+    memset(send_buffer, 0, SEND_BUFFER_SIZE);
+
+    // Set meta data
+    n = sprintf(send_buffer, "Tf %u;b %u;s %d", rtl_freq(dev), rtl_sample_rate(dev), spectrum_gain);
+
+    INFO("ws_update_client %s\n", send_buffer);
+
+    // Send data
+    nnn = mg_ws_send(c, send_buffer, n, WEBSOCKET_OP_BINARY);
+
+    if (nnn < 0)
+    {
+        ERROR("Writing failed, error code == %d\n", nnn);
+    }
 }
 
 void ws_handler_data(struct mg_connection *c, struct per_session_data__rtl_ws *pss)
 {
-    int n = 0, nn = 0, nnn = 0;
-    char tmpbuffer[30] = {0};
-    struct rtl_dev *dev = cbb_get_rtl_dev();
+    if (pss->update_client == 1)
+    {
+        pss->update_client = 0;
+        ws_update_client(c);
+    }
 
     if (pss->send_data)
     {
         if (cbb_new_spectrum_available())
         {
-            // Clear buffer
-            memset(send_buffer, 0, SEND_BUFFER_SIZE);
-
-            // Set meta data
-            // n = sprintf(send_buffer, "Sf%u;b %u;s %d;d", rtl_freq(dev), rtl_sample_rate(dev), spectrum_gain);
-            n = sprintf(send_buffer, "S");
-
-            // Write spectrum
-            nn = cbb_get_spectrum_payload(send_buffer + n, SEND_BUFFER_SIZE - n, spectrum_gain);
-
-            // Send data
-            nnn = mg_ws_send(c, send_buffer, n + nn, WEBSOCKET_OP_BINARY);
+            ws_update_spectrum(c);
         }
 
         if (pss->audio_data == 1 && audio_new_audio_available())
         {
-            // Clear buffer
-            memset(send_buffer, 0, SEND_BUFFER_SIZE);
-
-            // Set meta data
-            n = sprintf(send_buffer, "A   ");
-
-            // Write audio
-            nn = audio_get_audio_payload(send_buffer + n, SEND_BUFFER_SIZE - n);
-
-            // Send data
-            nnn = mg_ws_send(c, send_buffer, n + nn, WEBSOCKET_OP_BINARY);
-
-            INFO("Audio header size %d, audio size %d, audio buffer size %d, socet size %d\n", n, nn, n + nn, nnn);
+            ws_update_audio(c);
         }
-    }
-
-    if (nnn < 0)
-    {
-        ERROR("Writing failed, error code == %d\n", nnn);
     }
 }
 

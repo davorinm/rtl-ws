@@ -1,12 +1,30 @@
 <!DOCTYPE HTML>
 <html>
+
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta charset="utf-8" http-equiv="Content-Language" content="en" />
     <title>RTL-WS</title>
     <style type="text/css">
-    .group2 { vertical-align:middle; text-align:center; background:#f0f0e0; padding:12px; -webkit-border-radius:10px; -moz-border-radius:10px; border-radius:10px; }
-    .canvas { vertical-align:top; text-align:center; background:#efefd0; padding:12px; -webkit-border-radius:10px; -moz-border-radius:10px; border-radius:10px; }
+        .group2 {
+            vertical-align: middle;
+            text-align: center;
+            background: #f0f0e0;
+            padding: 12px;
+            -webkit-border-radius: 10px;
+            -moz-border-radius: 10px;
+            border-radius: 10px;
+        }
+
+        .canvas {
+            vertical-align: top;
+            text-align: center;
+            background: #efefd0;
+            padding: 12px;
+            -webkit-border-radius: 10px;
+            -moz-border-radius: 10px;
+            border-radius: 10px;
+        }
     </style>
     <script src="/rtl_ui.js"></script>
 </head>
@@ -24,61 +42,68 @@
                             </td>
                             <td>
                                 <table>
-                                <tr>
-                                    <td>
-                                        Frequency:
-                                    </td>
-                                    <td>
-                                        <input size="8" type="text" id="frequency" onchange="frequency_change();" value="100000" />
-                                    </td>
-                                    <td>
-                                        kHz
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        Bandwidth:
-                                    </td>
-                                    <td>
-                                        <input size="8" type="text" id="bandwidth" onchange="bw_change();" value="2048" />
-                                    </td>
-                                    <td>
-                                        kHz
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        Spectrum gain:
-                                    </td>
-                                    <td>
-                                        <input size="8" type="text" id="spectrumgain" onchange="spectrumgain_change();" value="0" />
-                                    </td>
-                                    <td>
-                                        dB
-                                    </td>
-                                </tr>
-                            </table>
+                                    <tr>
+                                        <td>
+                                            Frequency:
+                                        </td>
+                                        <td>
+                                            <input size="8" type="text" id="frequency" onchange="frequency_change();"
+                                                value="100000" />
+                                        </td>
+                                        <td>
+                                            kHz
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            Bandwidth:
+                                        </td>
+                                        <td>
+                                            <input size="8" type="text" id="bandwidth" onchange="bw_change();"
+                                                value="2048" />
+                                        </td>
+                                        <td>
+                                            kHz
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            Spectrum gain:
+                                        </td>
+                                        <td>
+                                            <input size="8" type="text" id="spectrumgain"
+                                                onchange="spectrumgain_change();" value="0" />
+                                        </td>
+                                        <td>
+                                            dB
+                                        </td>
+                                    </tr>
+                                </table>
                             </td>
                             <td width="500">
-                            <table>
-                                <tr>
-                                    <input style="float: right" type="submit" id="toggle_sound" onclick="toggle_sound();" value="start_audio" />
-                                </tr>
-                                <tr>                                    
-                                    <input style="float: right" type="submit" id="start_or_stop" onclick="start_or_stop();" value="start" />
-                                </tr>
-                            </table>
+                                <table>
+                                    <tr>
+                                        <input style="float: right" type="submit" id="toggle_sound"
+                                            onclick="toggle_sound();" value="start_audio" />
+                                    </tr>
+                                    <tr>
+                                        <input style="float: right" type="submit" id="start_or_stop"
+                                            onclick="start_or_stop();" value="start" />
+                                    </tr>
+                                </table>
                             </td>
                         </tr>
                     </table>
                 </td>
             </tr>
-            <tr>
-                <td class="canvas" colspan="2" height="520" width="1050">
-                    <div id="spectrum">
-                    </div></td>
-                </tr>
-            </tbody>
-        </table>
+        </tbody>
+    </table>
+    <div id="spectrum" height="520" width="1050">
+    </div>
+    <div id="band" height="520" width="1050">
+    </div>
+    <div id="waterfall" height="520" width="1050">
+    </div>
+</body>
 
-    </body></html>
+</html>
