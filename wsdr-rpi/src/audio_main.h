@@ -5,6 +5,8 @@
 
 void audio_init();
 
+void audio_reset();
+
 int audio_new_audio_available();
 
 int audio_get_audio_payload(char* buf, int buf_len);

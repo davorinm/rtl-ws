@@ -1,39 +1,50 @@
-var pos = 0;
-var started = false;
-var down = 0;
-var no_last = 1;
-var last_x = 0, last_y = 0;
-var ctx;
-var socket_lm;
-var color = "#000000";
-var y_offset = 256;
-var spectrogram_offset = 315;
-var frequency = 100000;
-var spectrumgain = 0;
-var real_spectrumgain = 0;
-var real_frequency = 100000;
-var bandwidth = 2048;
-var real_bandwidth = 2048;
-var conn_counter = 0;
-var conn_inc = -1;
-var spectrogram = new Array();
+let pos = 0;
+let started = false;
+let down = 0;
+let no_last = 1;
+let last_x = 0, last_y = 0;
+let spectrumCtx;
+let spectrumGridCtx;
+let bandCtx;
+let waterfallCtx;
+let socket_lm;
+let color = "#000000";
+let y_offset = 256;
+let spectrogram_offset = 315;
+let frequency = 100000;
+let spectrumgain = 0;
+let real_spectrumgain = 0;
+let real_frequency = 100000;
+let bandwidth = 2048;
+let real_bandwidth = 2048;
+let conn_counter = 0;
+let conn_inc = -1;
+let waterafallData = new Array();
 for (var idx = 0; idx < 200; idx++) {
-    spectrogram[idx] = new Array();
+    waterafallData[idx] = new Array();
     for (var idx2; idx2 < 1024; idx2++) {
-        spectrogram[idx][idx2] = 0;
+        waterafallData[idx][idx2] = 0;
     }
 }
-var spectrogram_idx = -1;
-var spectrogram_image;
-var sound_on = false;
-var samplesProcessorNode;
-var audioContext;
+let waterafallDataIndex = -1;
+let waterfallImage;
+let sound_on = false;
+let samplesProcessorNode;
+let audioContext;
+
+window.onload = function (event) {
+    initialize();
+};
+
+window.onresize = function (event) {
+
+};
 
 function initialize() {
-    socket_lm = new WebSocket(get_appropriate_ws_url() + "/websocket", "rtl-ws-protocol");
-    console.log("WebSocket instantiated");
     try {
+        socket_lm = new WebSocket(get_appropriate_ws_url() + "/websocket");
         socket_lm.binaryType = "arraybuffer";
+        console.log("WebSocket instantiated");
 
         socket_lm.onopen = function () {
             document.getElementById("ws_status").src = "connect2.png";
@@ -48,25 +59,9 @@ function initialize() {
                 // Spectrum
                 const bytearray = new Uint8Array(msg.data, 1);
 
-                ctx.clearRect(0, 0, 1030, 315);
-                spectrogram_idx++;
-                if (spectrogram_idx >= spectrogram.length) {
-                    spectrogram_idx = 0;
-                }
-                ctx.beginPath();
-                for (var idx = 0; idx < bytearray.length; idx++) {
-                    if (idx == 0) {
-                        ctx.moveTo(0, -value * 4 + y_offset);
-                        ctx.strokeStyle = "black";
-                    }
-                    var value = bytearray[idx];
-                    spectrogram[spectrogram_idx][idx - 1] = value;
-                    ctx.lineTo(idx, -value * 4 + y_offset);
-                }
-                ctx.stroke();
-                ctx.closePath();
+                updateSpectrum(bytearray);
 
-                update_spectrogram();
+                updateWaterfall(bytearray);
             }
             else if (firstChar == 'A') {
                 // Audio
@@ -86,7 +81,7 @@ function initialize() {
                     const i = j[f++].split(' ');
 
                     if (i[0] == 'b') {
-                        var bw_element = document.getElementById("bandwidth");
+                        let bw_element = document.getElementById("bandwidth");
                         if ((bw_element.value * 1000) != i[1]) {
                             bw_element.style.color = "lightgray";
                         } else {
@@ -95,7 +90,7 @@ function initialize() {
                             redraw_hz_axis = true;
                         }
                     } else if (i[0] == 'f') {
-                        var freq_element = document.getElementById("frequency");
+                        let freq_element = document.getElementById("frequency");
                         if ((freq_element.value * 1000) != i[1]) {
                             freq_element.style.color = "lightgray";
                         } else {
@@ -104,7 +99,7 @@ function initialize() {
                             redraw_hz_axis = true;
                         }
                     } else if (i[0] == 's') {
-                        var spectrumgain_element = document.getElementById("spectrumgain");
+                        let spectrumgain_element = document.getElementById("spectrumgain");
                         if (spectrumgain_element.value != i[1]) {
                             spectrumgain_element.style.color = "lightgray";
                         } else {
@@ -115,25 +110,7 @@ function initialize() {
                 }
 
                 if (redraw_hz_axis) {
-                    ctx.font = "10px Georgia";
-                    ctx.fillStyle = "black";
-                    var freqtext = (real_frequency - real_bandwidth / 2) / 1000 + " MHz";
-                    var w = ctx.measureText(freqtext).width;
-                    ctx.fillText(freqtext, 0, 300);
-                    freqtext = (real_frequency) / 1000 + " MHz";
-                    w = ctx.measureText(freqtext).width;
-                    ctx.fillText(freqtext, 512 - w / 2, 300);
-                    freqtext = (real_frequency + real_bandwidth / 2) / 1000 + " MHz";
-                    w = ctx.measureText(freqtext).width;
-                    ctx.fillText(freqtext, 1024 - w, 300);
-
-
-                    ctx.beginPath();
-                    ctx.lineWidth = "1";
-                    ctx.fillStyle = "lightgray";
-                    ctx.arc(conn_counter * 5 + 5, 5, 4, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.closePath();
+                    upateFrequencyBands()
                 }
             }
         }
@@ -145,19 +122,46 @@ function initialize() {
         socket_lm.onerror = function () {
             document.getElementById("ws_status").src = "connect2_close.png";
         }
-    } catch (exception) {
-        alert('<p>Error' + exception);
+    } catch (e) {
+        console.error('Sorry, the web socket at "%s" is un-available', url);
     }
 
-    var canvas = document.createElement('canvas');
-    canvas.height = 500;
-    canvas.width = 1030;
-    ctx = canvas.getContext("2d");
-    spectrogram_image = ctx.createImageData(1024, spectrogram.length);
+    // Spectrum
+    var spectrumCanvas = document.getElementById('spectrumCanvas');
+    spectrumCtx = spectrumCanvas.getContext("2d");
+    spectrumCtx.canvas.width = spectrumCanvas.clientWidth;
+    spectrumCtx.canvas.height = spectrumCanvas.clientHeight;
 
-    document.getElementById('spectrum').appendChild(canvas);
+    console.log("spectrumCtx", spectrumCtx.canvas.clientWidth, spectrumCtx.canvas.clientHeight);
 
+    // Spectrum grid
+    var spectrumGridCanvas = document.getElementById('spectrumGridCanvas');
+    spectrumGridCtx = spectrumGridCanvas.getContext("2d");
+    spectrumGridCtx.canvas.width = spectrumGridCanvas.clientWidth;
+    spectrumGridCtx.canvas.height = spectrumGridCanvas.clientHeight;
+
+    // Band
+    var bandCanvas = document.getElementById('bandCanvas');
+    bandCtx = bandCanvas.getContext("2d");
+    bandCtx.canvas.width = bandCanvas.clientWidth;
+    bandCtx.canvas.height = bandCanvas.clientHeight;
+
+    console.log("bandCtx", bandCtx.canvas.clientWidth, bandCtx.canvas.clientHeight);
+
+    // Waterfall
+    var waterfallCanvas = document.getElementById('waterfallCanvas');
+    waterfallCtx = waterfallCanvas.getContext("2d");
+    waterfallCtx.canvas.width = waterfallCanvas.clientWidth;
+    waterfallCtx.canvas.height = waterfallCanvas.clientHeight;
+    waterfallImage = waterfallCtx.createImageData(1024, 315);
+
+    console.log("waterfallCtx", waterfallCtx.canvas.clientWidth, waterfallCtx.canvas.clientHeight);
+
+    // other
     document.getElementById("toggle_sound").disabled = true;
+
+
+    drawGrid();
 }
 
 function get_appropriate_ws_url() {
@@ -178,29 +182,153 @@ function get_appropriate_ws_url() {
     return pcol + u[0];
 }
 
-function update_spectrogram() {
-    if (started) {
-        for (var y = 0; y < spectrogram.length; y++) {
-            var s_y = spectrogram_idx + y;
-            s_y = ((s_y >= spectrogram.length) ? (s_y - spectrogram.length) : s_y);
-            for (var x = 0; x < 1024; x++) {
-                var idx = (((spectrogram.length - 1) - y) * 1024 * 4) + x * 4;
-                var ampl = 0;
-                try {
-                    ampl = spectrogram[s_y][x];
-                } catch (exception) {
-                    ampl = 0;
-                }
-                ampl *= 8;
-                ampl += 12;
-                spectrogram_image.data[idx + 0] = 255 - ampl;
-                spectrogram_image.data[idx + 1] = 255 - ampl;
-                spectrogram_image.data[idx + 2] = 255 - ampl;
-                spectrogram_image.data[idx + 3] = 255;
-            }
+function updateSpectrum(bytearray) {
+    const spectrumCtxWidth = spectrumCtx.canvas.clientWidth;
+    const spectrumCtxHeight = spectrumCtx.canvas.clientHeight;
+
+    spectrumCtx.clearRect(0, 0, spectrumCtxWidth, spectrumCtxHeight);
+    spectrumCtx.beginPath();
+    spectrumCtx.strokeStyle = "#ff000";
+    spectrumCtx.lineWidth = 2;
+
+    for (var idx = 0; idx < bytearray.length; idx++) {
+        const value = bytearray[idx];
+        const yPos = -value * 4 + y_offset;
+        if (idx == 0) {
+            spectrumCtx.moveTo(0, yPos);
         }
-        ctx.putImageData(spectrogram_image, 0, spectrogram_offset);
+        spectrumCtx.lineTo(idx, yPos);
     }
+
+    spectrumCtx.stroke();
+    spectrumCtx.closePath();
+}
+
+function drawGrid() {
+    const bw = spectrumGridCtx.canvas.clientWidth;
+    const bh = spectrumGridCtx.canvas.clientHeight;
+
+    // Padding
+    const p = 0;
+
+    // Horizontal lines
+    for (var x = 40; x <= bw; x += 40) {
+        spectrumGridCtx.moveTo(0.5 + x + p, p);
+        spectrumGridCtx.lineTo(0.5 + x + p, bh + p);
+    }
+
+    // Vertical lines
+    for (var x = 40; x <= bh; x += 40) {
+        spectrumGridCtx.moveTo(p, 0.5 + x + p);
+        spectrumGridCtx.lineTo(bw + p, 0.5 + x + p);
+    }
+
+    spectrumGridCtx.strokeStyle = "black";
+    spectrumGridCtx.stroke();
+}
+
+function upateFrequencyBands() {
+    const bandCtxWidth = bandCtx.canvas.clientWidth;
+    const bandCtxHeight = bandCtx.canvas.clientHeight;
+
+    const textVerticalPosition = bandCtxHeight / 2;
+
+    bandCtx.clearRect(0, 0, bandCtxWidth, bandCtxHeight);
+
+    bandCtx.font = "14px Georgia";
+    bandCtx.fillStyle = "black";
+
+    var freqtext = (real_frequency - real_bandwidth / 2) / 1000 + " MHz";
+    var w = bandCtx.measureText(freqtext).width;
+    bandCtx.fillText(freqtext, 0, textVerticalPosition);
+
+    freqtext = (real_frequency) / 1000 + " MHz";
+    w = bandCtx.measureText(freqtext).width;
+    bandCtx.fillText(freqtext, (bandCtxWidth / 2) - (w / 2), textVerticalPosition);
+
+    freqtext = (real_frequency + real_bandwidth / 2) / 1000 + " MHz";
+    w = bandCtx.measureText(freqtext).width;
+    bandCtx.fillText(freqtext, bandCtxWidth - w, textVerticalPosition);
+
+
+    bandCtx.beginPath();
+    bandCtx.lineWidth = "1";
+    bandCtx.fillStyle = "lightgray";
+    bandCtx.arc(conn_counter * 5 + 5, 5, 4, 0, 2 * Math.PI);
+    bandCtx.fill();
+    bandCtx.closePath();
+}
+
+function colorFromAmplitude(ampl) {
+    let r, g, b;
+
+    var tmp = ampl / 255.0;  // 0.0~1.0
+    if (tmp < 0.50) {
+        r = 0.0;
+    } else if (tmp > 0.75) {
+        r = 1.0;
+    } else {
+        r = 4.0 * tmp - 2.0;
+    }
+
+    if (tmp < 0.25) {
+        g = 4.0 * tmp;
+    } else if (tmp > 0.75) {
+        g = -4.0 * tmp + 4.0;
+    } else {
+        g = 1.0;
+    }
+
+    if (tmp < 0.25) {
+        b = 1.0;
+    } else if (tmp > 0.50) {
+        b = 0.0;
+    } else {
+        b = -4.0 * tmp + 2.0;
+    }
+
+    r *= 255;
+    g *= 255;
+    b *= 255;
+
+    return [r, g, b];
+}
+
+function updateWaterfall(bytearray) {
+    // Fill data
+    waterafallDataIndex++;
+    if (waterafallDataIndex >= waterafallData.length) {
+        waterafallDataIndex = 0;
+    }
+
+    for (var idx = 0; idx < bytearray.length; idx++) {
+        const value = bytearray[idx];
+        waterafallData[waterafallDataIndex][idx - 1] = value;
+    }
+
+    // Draw waterfall
+    for (var y = 0; y < waterafallData.length; y++) {
+        var s_y = waterafallDataIndex + y;
+        s_y = ((s_y >= waterafallData.length) ? (s_y - waterafallData.length) : s_y);
+        for (var x = 0; x < 1024; x++) {
+            var idx = (((waterafallData.length - 1) - y) * 1024 * 4) + x * 4;
+            var ampl = 0;
+            try {
+                ampl = waterafallData[s_y][x];
+            } catch (exception) {
+                ampl = 0;
+            }
+
+            let color = colorFromAmplitude(ampl);
+
+            waterfallImage.data[idx + 0] = color[0];
+            waterfallImage.data[idx + 1] = color[1];
+            waterfallImage.data[idx + 2] = color[2];
+            waterfallImage.data[idx + 3] = 255;
+        }
+    }
+
+    waterfallCtx.putImageData(waterfallImage, 0, 0);
 }
 
 function frequency_change() {
@@ -219,7 +347,9 @@ function spectrumgain_change() {
 }
 
 function start_or_stop() {
-    var value = document.getElementById("start_or_stop").value;
+    console.log("start_or_stop");
+
+    let value = document.getElementById("start_or_stop").value;
     socket_lm.send(value);
     if (value == "start") {
         started = true;

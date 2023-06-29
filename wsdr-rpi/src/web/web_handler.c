@@ -8,7 +8,7 @@
 #include "../mongoose/mongoose.h"
 
 static const char *s_listen_on = "localhost:8000";
-static const char *s_web_root = "/home/davorin/Projects/rtl-ws/wsdr-rpi/resources";
+static const char *s_web_root = "/Users/davorinmadaric/Projects/rtl-ws/wsdr-rpi/resources";
 
 // Mongoose event manager
 struct mg_mgr mgr;
@@ -122,6 +122,8 @@ static void *timer_fn(void *arg)
         //     }
         // }
     }
+
+    return 0;
 }
 
 void web_init()
@@ -153,7 +155,7 @@ void web_init()
 void web_poll()
 {
     // mongoose loop
-    mg_mgr_poll(&mgr, 200);
+    mg_mgr_poll(&mgr, 100);
 }
 
 void web_close()

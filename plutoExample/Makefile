@@ -9,9 +9,7 @@ PROGRAM=$(BUILDDIR)/rtl-ws-server
 CSOURCEFILES=$(shell find $(SRCDIR) -iname \*.c)
 COBJFILES=$(subst .c,.o,$(subst $(SRCDIR),$(BUILDDIR),$(CSOURCEFILES)))
 
-DOCKERIMAGE=build_system
-
-.PHONY: all build prepare clean run dockerBuild dockerRun
+.PHONY: all build prepare clean run
 
 build: $(PROGRAM)
 	
@@ -34,14 +32,3 @@ clean:
 run: build
 	# open http://localhost:8000
 	./build/rtl-ws-server
-
-dockerBuild:
-	docker build -t $(DOCKERIMAGE) -f Dockerfile .
-
-dockerRun:
-	docker run --rm -ti -v $(shell pwd):/project -p 8000:8000 $(DOCKERIMAGE)
-
-dockerClean: 
-	docker rm $(DOCKERIMAGE) -f && \
-	docker rmi $(DOCKERIMAGE)
-	

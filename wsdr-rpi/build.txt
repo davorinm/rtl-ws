@@ -92,3 +92,17 @@
 -rwxr-xr-x 1 davorin davorin 235968 Jun 25 11:32 build/rtl-ws-server
 -rwxr-xr-x 1 davorin davorin 235968 Jun 25 11:42 build/rtl-ws-server
 -rwxr-xr-x 1 davorin davorin 235968 Jun 25 11:44 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183728 Jun 26 00:15 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183728 Jun 26 00:17 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183728 Jun 26 12:49 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183776 Jun 26 12:57 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183776 Jun 26 13:02 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183776 Jun 26 13:10 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183776 Jun 26 13:50 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183776 Jun 26 13:52 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183776 Jun 26 21:34 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183776 Jun 27 12:12 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  183776 Jun 28 12:57 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  184080 Jun 28 13:35 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  184080 Jun 28 13:35 build/rtl-ws-server
+-rwxr-xr-x@ 1 davorinmadaric  staff  184080 Jun 28 13:37 build/rtl-ws-server
