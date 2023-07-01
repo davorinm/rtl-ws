@@ -224,6 +224,7 @@ function drawGrid() {
     }
 
     spectrumGridCtx.strokeStyle = "black";
+    spectrumGridCtx.lineWidth = 0.5;
     spectrumGridCtx.stroke();
 }
 

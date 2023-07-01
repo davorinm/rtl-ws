@@ -8,7 +8,7 @@
 #include "../mongoose/mongoose.h"
 
 static const char *s_listen_on = "localhost:8000";
-static const char *s_web_root = "/Users/davorinmadaric/Projects/rtl-ws/wsdr-rpi/resources";
+static const char *s_web_root = "./resources";
 
 // Mongoose event manager
 struct mg_mgr mgr;
