@@ -29,8 +29,7 @@
 /* RX is input, TX is output */
 enum iodev
 {
-	RX,
-	TX
+	RX
 };
 
 /* common RX and TX streaming params */
@@ -49,10 +48,7 @@ static char tmpstr[64];
 static struct iio_context *ctx = NULL;
 static struct iio_channel *rx0_i = NULL;
 static struct iio_channel *rx0_q = NULL;
-static struct iio_channel *tx0_i = NULL;
-static struct iio_channel *tx0_q = NULL;
 static struct iio_buffer *rxbuf = NULL;
-static struct iio_buffer *txbuf = NULL;
 
 static bool stop;
 
@@ -64,10 +60,6 @@ static void shutdown()
 	{
 		iio_buffer_destroy(rxbuf);
 	}
-	if (txbuf)
-	{
-		iio_buffer_destroy(txbuf);
-	}
 
 	printf("* Disabling streaming channels\n");
 	if (rx0_i)
@@ -77,14 +69,6 @@ static void shutdown()
 	if (rx0_q)
 	{
 		iio_channel_disable(rx0_q);
-	}
-	if (tx0_i)
-	{
-		iio_channel_disable(tx0_i);
-	}
-	if (tx0_q)
-	{
-		iio_channel_disable(tx0_q);
 	}
 
 	printf("* Destroying context\n");
@@ -172,9 +156,6 @@ static bool get_phy_chan(enum iodev d, int chid, struct iio_channel **chn)
 	case RX:
 		*chn = iio_device_find_channel(get_ad9361_phy(), get_ch_name("voltage", chid), false);
 		return *chn != NULL;
-	case TX:
-		*chn = iio_device_find_channel(get_ad9361_phy(), get_ch_name("voltage", chid), true);
-		return *chn != NULL;
 	default:
 		IIO_ENSURE(0);
 		return false;
@@ -234,16 +215,13 @@ bool cfg_ad9361_streaming_ch(struct stream_cfg *cfg, enum iodev type, int chid)
 int mainBlabla(int argc, char **argv)
 {
 	// Streaming devices
-	struct iio_device *tx;
 	struct iio_device *rx;
 
 	// RX and TX sample counters
 	size_t nrx = 0;
-	size_t ntx = 0;
 
 	// Stream configurations
 	struct stream_cfg rxcfg;
-	struct stream_cfg txcfg;
 
 	// Listen to ctrl+c and IIO_ENSURE
 	signal(SIGINT, handle_sig);
@@ -253,12 +231,6 @@ int mainBlabla(int argc, char **argv)
 	rxcfg.fs_hz = MHZ(2.5);		 // 2.5 MS/s rx sample rate
 	rxcfg.lo_hz = GHZ(2.5);		 // 2.5 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
-
-	// TX stream config
-	txcfg.bw_hz = MHZ(1.5); // 1.5 MHz rf bandwidth
-	txcfg.fs_hz = MHZ(2.5); // 2.5 MS/s tx sample rate
-	txcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
-	txcfg.rfport = "A";		// port A (select for rf freq.)
 
 	printf("* Acquiring IIO context\n");
 	if (argc == 1)
@@ -272,24 +244,18 @@ int mainBlabla(int argc, char **argv)
 	IIO_ENSURE(iio_context_get_devices_count(ctx) > 0 && "No devices");
 
 	printf("* Acquiring AD9361 streaming devices\n");
-	IIO_ENSURE(get_ad9361_stream_dev(TX, &tx) && "No tx dev found");
 	IIO_ENSURE(get_ad9361_stream_dev(RX, &rx) && "No rx dev found");
 
 	printf("* Configuring AD9361 for streaming\n");
 	IIO_ENSURE(cfg_ad9361_streaming_ch(&rxcfg, RX, 0) && "RX port 0 not found");
-	IIO_ENSURE(cfg_ad9361_streaming_ch(&txcfg, TX, 0) && "TX port 0 not found");
 
 	printf("* Initializing AD9361 IIO streaming channels\n");
 	IIO_ENSURE(get_ad9361_stream_ch(RX, rx, 0, &rx0_i) && "RX chan i not found");
 	IIO_ENSURE(get_ad9361_stream_ch(RX, rx, 1, &rx0_q) && "RX chan q not found");
-	IIO_ENSURE(get_ad9361_stream_ch(TX, tx, 0, &tx0_i) && "TX chan i not found");
-	IIO_ENSURE(get_ad9361_stream_ch(TX, tx, 1, &tx0_q) && "TX chan q not found");
 
 	printf("* Enabling IIO streaming channels\n");
 	iio_channel_enable(rx0_i);
 	iio_channel_enable(rx0_q);
-	iio_channel_enable(tx0_i);
-	iio_channel_enable(tx0_q);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
 	rxbuf = iio_device_create_buffer(rx, 1024 * 1024, false);
@@ -298,27 +264,13 @@ int mainBlabla(int argc, char **argv)
 		perror("Could not create RX buffer");
 		shutdown();
 	}
-	txbuf = iio_device_create_buffer(tx, 1024 * 1024, false);
-	if (!txbuf)
-	{
-		perror("Could not create TX buffer");
-		shutdown();
-	}
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
 	while (!stop)
 	{
-		ssize_t nbytes_rx, nbytes_tx;
+		ssize_t nbytes_rx;
 		char *p_dat, *p_end;
 		ptrdiff_t p_inc;
-
-		// Schedule TX buffer
-		nbytes_tx = iio_buffer_push(txbuf);
-		if (nbytes_tx < 0)
-		{
-			printf("Error pushing buf %d\n", (int)nbytes_tx);
-			shutdown();
-		}
 
 		// Refill RX buffer
 		nbytes_rx = iio_buffer_refill(rxbuf);
@@ -338,18 +290,6 @@ int mainBlabla(int argc, char **argv)
 			const int16_t q = ((int16_t *)p_dat)[1]; // Imag (Q)
 			((int16_t *)p_dat)[0] = q;
 			((int16_t *)p_dat)[1] = i;
-		}
-
-		// WRITE: Get pointers to TX buf and write IQ to TX buf port 0
-		p_inc = iio_buffer_step(txbuf);
-		p_end = iio_buffer_end(txbuf);
-		for (p_dat = (char *)iio_buffer_first(txbuf, tx0_i); p_dat < p_end; p_dat += p_inc)
-		{
-			// Example: fill with zeros
-			// 12-bit sample needs to be MSB aligned so shift by 4
-			// https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms2-ebz/software/basic_iq_datafiles#binary_format
-			((int16_t *)p_dat)[0] = 0 << 4; // Real (I)
-			((int16_t *)p_dat)[1] = 0 << 4; // Imag (Q)
 		}
 
 		// Sample counter increment and status output

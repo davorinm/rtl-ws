@@ -1,3 +1,5 @@
+#ifdef RTLSDR_SENSOR
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -153,3 +155,5 @@ void rtl_close(struct rtl_dev *dev)
     free(dev);
     DEBUG("rtl_close returns\n");
 }
+
+#endif

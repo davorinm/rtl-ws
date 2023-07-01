@@ -1,7 +1,7 @@
 {
 	"folders": [
 		{
-			"path": "wsdr-rpi"
+			"path": "wsdr"
 		}
 	],
 	"settings": {
@@ -15,14 +15,8 @@
 			"log.h": "c",
 			"mongoose.h": "c",
 			"unistd.h": "c",
-			"pthread.h": "c"
-		},
-		"makefile.launchConfigurations": [
-			{
-				"cwd": "/home/davorin/Projects/rtl-ws/wsdr-rpi/build",
-				"binaryPath": "/home/davorin/Projects/rtl-ws/wsdr-rpi/build/rtl-ws-server",
-				"binaryArgs": []
-			}
-		]
+			"pthread.h": "c",
+			"rtl_sensor.h": "c"
+		}
 	}
 }
