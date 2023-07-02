@@ -2,13 +2,10 @@
 #define CBB_MAIN_H
 
 #include "rf_decimator.h"
-#include "../signal/rtl_sensor.h"
 
 void cbb_init();
 
 struct rf_decimator* cbb_rf_decimator();
-
-struct rtl_dev* cbb_get_rtl_dev();
 
 int cbb_new_spectrum_available();
 

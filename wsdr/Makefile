@@ -1,11 +1,14 @@
 SRCDIR=src
 BUILDDIR=build
+TARGET=rtl-ws-server
 VPATH=$(SRCDIR)
-PERF_OPTS=-O3 -ffast-math -funroll-loops
-PERF_LIBS=-lpthread -lm -lfftw3
+
 CC=gcc
+PERF_OPTS=-O3 -ffast-math -funroll-loops -Wall
+PERF_LIBS=-lpthread -lm -lfftw3
 PPDEFS=-DRTL_WS_DEBUG
-PROGRAM=$(BUILDDIR)/rtl-ws-server
+
+PROGRAM=$(BUILDDIR)/$(TARGET)
 CSOURCEFILES=$(shell find $(SRCDIR) -iname \*.c)
 COBJFILES=$(subst .c,.o,$(subst $(SRCDIR),$(BUILDDIR),$(CSOURCEFILES)))
 
@@ -40,9 +43,6 @@ $(PROGRAM): $(COBJFILES) $(CPPOBJFILES)
 $(BUILDDIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(PERF_OPTS) $(PPDEFS) -c -B $(SRCDIR) $< -o $@
-
-prepare:
-	mkdir -p $(BUILDDIR)
 
 clean:
 	rm -rf $(BUILDDIR)

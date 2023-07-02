@@ -39,7 +39,6 @@ typedef union
 
 static inline float atan2_approx(float y, float x)
 {
-    static const float pi = (float) M_PI;
     static const float pi_by_2 = (float) (M_PI / 2);
     register float atan = 0;
     register float z = 0;

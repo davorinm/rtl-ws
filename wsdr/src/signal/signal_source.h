@@ -2,12 +2,20 @@
 #define SIGNAL_SOURCE_H
 
 #include "../dsp/dsp_common.h"
-#include "rtl_sensor.h"
 
-typedef void (*signal_source_callback)(const cmplx_u8*,int);
+typedef void (*signal_source_callback)(const cmplx_u8 *, int);
 
+uint32_t signal_get_sample_rate();
 
-void signal_source_start(struct rtl_dev* dev);
+int signal_set_sample_rate(uint32_t fs);
+
+uint32_t signal_get_freq();
+
+int signal_set_frequency(uint32_t f);
+
+void signal_source_init();
+
+void signal_source_start();
 
 void signal_source_add_callback(signal_source_callback callback);
 

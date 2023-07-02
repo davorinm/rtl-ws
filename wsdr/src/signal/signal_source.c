@@ -7,6 +7,8 @@
 #include "../tools/list.h"
 #include "../tools/log.h"
 
+#define DEV_INDEX 0
+
 struct _signal_holder
 {
     const cmplx_u8 *signal;
@@ -54,14 +56,38 @@ static void *worker(void *user)
     return NULL;
 }
 
-void signal_source_start(struct rtl_dev *dev)
+uint32_t signal_get_freq()
+{
+    return rtl_freq(sensor);
+}
+
+int signal_set_frequency(uint32_t f)
+{
+    return rtl_set_frequency(sensor, f);
+}
+
+uint32_t signal_get_sample_rate()
+{
+    return rtl_sample_rate(sensor);
+}
+
+int signal_set_sample_rate(uint32_t fs)
+{
+    return rtl_set_sample_rate(sensor, fs);
+}
+
+void signal_source_init()
+{
+    rtl_init(&sensor, DEV_INDEX);
+}
+
+void signal_source_start()
 {
     DEBUG("Starting signal source...\n");
     if (running)
         return;
 
     running = 1;
-    sensor = dev;
     callback_list = list_alloc();
     pthread_mutex_init(&callback_mutex, NULL);
     pthread_create(&worker_thread, NULL, worker, sensor);
@@ -87,6 +113,8 @@ void signal_source_stop()
     DEBUG("Stopping signal source...\n");
     if (!running)
         return;
+
+    rtl_close(sensor);
 
     running = 0;
     rtl_cancel(sensor);

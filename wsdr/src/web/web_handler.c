@@ -45,7 +45,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
     else if (ev == MG_EV_WRITE)
     {
         int64_t t = *(int64_t *)ev_data;
-        // MG_INFO(("MG_EV_WRITE bytes_written: %lld", t));
+        MG_DEBUG(("MG_EV_WRITE bytes_written: %lld", t));
     }
     else if (ev == MG_EV_WS_OPEN)
     {

@@ -6,7 +6,6 @@
 
 #include "cbb_main.h"
 #include "../tools/common.h"
-#include "../signal/rtl_sensor.h"
 #include "../spectrum.h"
 #include "../signal/signal_source.h"
 #include "../tools/log.h"
@@ -14,12 +13,10 @@
 #include "../tools/rate_logger.h"
 #include "../settings.h"
 
-#define DEV_INDEX           0
 #define SPECTRUM_EST_MS     250
 #define FFT_POINTS          1024
 #define FFT_AVERAGE         6
 
-static struct rtl_dev* dev;
 static pthread_mutex_t spectrum_mutex;
 static struct spectrum* spect;
 static struct rf_decimator* decim = NULL;
@@ -76,23 +73,18 @@ void cbb_init()
     cbb_rate_log = rate_logger_alloc();
     rate_logger_set_parameters(cbb_rate_log, "CBB", 60000);
     
-    rtl_init(&dev, DEV_INDEX);
+    signal_source_init();
 
     decim = rf_decimator_alloc();
-    rf_decimator_set_parameters(decim, rtl_sample_rate(dev), rtl_sample_rate(dev)/DECIMATED_TARGET_BW_HZ);
+    rf_decimator_set_parameters(decim, signal_get_sample_rate(), signal_get_sample_rate() / DECIMATED_TARGET_BW_HZ);
     
     pthread_mutex_init(&spectrum_mutex, NULL);
     spect = spectrum_alloc(FFT_POINTS);
 
-    signal_source_start(dev);
+    signal_source_start();
     signal_source_add_callback(log_data_rate);
     signal_source_add_callback(decimate);
     signal_source_add_callback(estimate_spectrum);
-}
-
-struct rtl_dev* cbb_get_rtl_dev()
-{
-    return dev;
 }
 
 struct rf_decimator* cbb_rf_decimator()
@@ -147,8 +139,6 @@ void cbb_close()
     spectrum_free(spect);
 
     pthread_mutex_destroy(&spectrum_mutex);
-    
-    rtl_close(dev);
 
     rate_logger_free(cbb_rate_log);
 }

@@ -3,6 +3,7 @@
 
 #include "ws_handler.h"
 #include "../dsp/cbb_main.h"
+#include "../signal/signal_source.h"
 #include "../audio_main.h"
 #include "../tools/log.h"
 #include "../settings.h"
@@ -17,9 +18,6 @@
 #define START_AUDIO_CMD "start_audio"
 #define STOP_AUDIO_CMD "stop_audio"
 
-static int current_user_id = 0;
-static int latest_user_id = 1;
-
 static volatile int spectrum_gain = 0;
 
 static char *send_buffer = NULL;
@@ -29,7 +27,6 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
     int f = 0;
     int bw = 0;
     char *in_buffer = NULL;
-    struct rtl_dev *dev = cbb_get_rtl_dev();
 
     struct mg_str command = wm->data;
     MG_INFO(("Got command: %.*s", (int)command.len, command.ptr));
@@ -38,14 +35,14 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
     {
         f = atoi(&command.ptr[strlen(FREQ_CMD)]) * 1000;
         INFO("Trying to tune to %d Hz...\n", f);
-        rtl_set_frequency(dev, f);
+        signal_set_frequency(f);
     }
     else if (mg_strcmp(command, mg_str(SAMPLE_RATE_CMD)) == 0)
     {
         bw = atoi(&in_buffer[strlen(SAMPLE_RATE_CMD)]) * 1000;
         INFO("Trying to set sample rate to %d Hz...\n", bw);
-        rtl_set_sample_rate(dev, bw);
-        rf_decimator_set_parameters(cbb_rf_decimator(), rtl_sample_rate(dev), rtl_sample_rate(dev) / DECIMATED_TARGET_BW_HZ);
+        signal_set_sample_rate(bw);
+        rf_decimator_set_parameters(cbb_rf_decimator(), signal_get_sample_rate(), signal_get_sample_rate() / DECIMATED_TARGET_BW_HZ);
     }
     else if (mg_strcmp(command, mg_str(SPECTRUM_GAIN_CMD)) == 0)
     {
@@ -132,14 +129,13 @@ static void ws_update_audio(struct mg_connection *c)
 
 static void ws_update_client(struct mg_connection *c)
 {
-    int n = 0, nn = 0, nnn = 0;
-    struct rtl_dev *dev = cbb_get_rtl_dev();
+    int n = 0, nnn = 0;
 
     // Clear buffer
     memset(send_buffer, 0, SEND_BUFFER_SIZE);
 
     // Set meta data
-    n = sprintf(send_buffer, "Tf %u;b %u;s %d", rtl_freq(dev), rtl_sample_rate(dev), spectrum_gain);
+    n = sprintf(send_buffer, "Tf %u;b %u;s %d", signal_get_freq(), signal_get_sample_rate(), spectrum_gain);
 
     INFO("ws_update_client %s\n", send_buffer);
 
