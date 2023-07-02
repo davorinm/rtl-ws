@@ -140,6 +140,8 @@ void cbb_close()
 
     pthread_mutex_destroy(&spectrum_mutex);
 
+    signal_source_close();
+
     rate_logger_free(cbb_rate_log);
 }
 

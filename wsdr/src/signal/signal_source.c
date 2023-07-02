@@ -114,12 +114,14 @@ void signal_source_stop()
     if (!running)
         return;
 
-    rtl_close(sensor);
-
     running = 0;
     rtl_cancel(sensor);
     pthread_join(worker_thread, NULL);
     pthread_mutex_destroy(&callback_mutex);
     list_free(callback_list);
     DEBUG("Signal source stopped.\n");
+}
+
+void signal_source_close() {
+    rtl_close(sensor);
 }

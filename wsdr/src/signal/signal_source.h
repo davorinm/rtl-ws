@@ -23,4 +23,6 @@ void signal_source_remove_callbacks();
 
 void signal_source_stop();
 
+void signal_source_close();
+
 #endif
