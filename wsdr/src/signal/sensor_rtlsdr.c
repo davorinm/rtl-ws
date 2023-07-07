@@ -1,12 +1,12 @@
-#ifdef RTLSDR_SENSOR
+#ifdef SENSOR_RTLSDR
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <rtl-sdr.h>
 
-#include "rtl_sensor.h"
-#include "../tools/log.h"
+#include "sensor_rtlsdr.h"
+#include "../tools/helpers.h"
 #include "../settings.h"
 
 #define RTL_DEFAULT_GAIN 25.4
@@ -27,8 +27,7 @@ int rtl_init(struct rtl_dev **dev, int dev_index)
     r = rtlsdr_open(&((*dev)->dev), dev_index);
     if (r >= 0)
     {
-        if ((r = rtl_set_sample_rate(*dev, RTL_DEFAULT_SAMPLE_RATE)) >= 0 &&
-            (r = rtl_set_frequency(*dev, RTL_DEFAULT_FREQUENCY)) >= 0)
+        if ((r = rtl_set_sample_rate(*dev, RTL_DEFAULT_SAMPLE_RATE)) >= 0 && (r = rtl_set_frequency(*dev, RTL_DEFAULT_FREQUENCY)) >= 0)
         {
             DEBUG("Setting rtl gain mode to manual...\n");
             r = rtlsdr_set_tuner_gain_mode((*dev)->dev, 1);

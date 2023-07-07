@@ -16,7 +16,38 @@
 			"mongoose.h": "c",
 			"unistd.h": "c",
 			"pthread.h": "c",
-			"rtl_sensor.h": "c"
-		}
+			"rtl_sensor.h": "c",
+			"queue": "c",
+			"stack": "c",
+			"random": "c",
+			"rate_logger.h": "c",
+			"settings.h": "c",
+			"signal_source.h": "c",
+			"helpers.h": "c",
+			"sensor.h": "c",
+			"resample.h": "c",
+			"stdint.h": "c"
+		},
+		"makefile.launchConfigurations": [
+			{
+				"cwd": "/Users/davorinmadaric/Projects/rtl-ws/wsdr/build",
+				"binaryPath": "/Users/davorinmadaric/Projects/rtl-ws/wsdr/build/rtl-ws-server",
+				"binaryArgs": []
+			}
+		],
+	    "makefile.configurations": [
+	        {
+	            "name": "release",
+	            "makeArgs": []
+	        },
+	        {
+	            "name": "debug",
+	            "makeArgs": []
+	        },
+	        {
+	            "name": "clean",
+	            "makeArgs": []
+	        }
+	    ]
 	}
 }

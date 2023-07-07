@@ -2,10 +2,18 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
-#include "signal_source.h"
-#include "rtl_sensor.h"
+
+#include "sensor.h"
 #include "../tools/list.h"
-#include "../tools/log.h"
+#include "../tools/helpers.h"
+
+#ifdef SENSOR_RTLSDR
+#include "sensor_rtlsdr.h"
+#endif
+
+#ifdef SENSOR_PLUTO
+#include "sensor_pluto.h"
+#endif
 
 #define DEV_INDEX 0
 
@@ -30,6 +38,8 @@ static void signal_source_callback_notifier(void *callback, void *signal)
 
 static void rtl_async_callback(unsigned char *buf, uint32_t len, void *ctx)
 {
+    UNUSED(ctx);
+
     struct _signal_holder s_h = {(cmplx_u8 *)buf, len / 2};
     pthread_mutex_lock(&callback_mutex);
     list_apply2(callback_list, signal_source_callback_notifier, &s_h);
@@ -56,42 +66,37 @@ static void *worker(void *user)
     return NULL;
 }
 
-uint32_t signal_get_freq()
+// ================
+
+void sensor_init()
+{
+#ifdef SENSOR_RTLSDR
+    rtl_init(&sensor, DEV_INDEX);
+#endif
+
+#ifdef SENSOR_PLUTO
+    pluto_init(&sensor);
+#endif
+}
+
+uint32_t sensor_get_freq()
 {
     return rtl_freq(sensor);
 }
 
-int signal_set_frequency(uint32_t f)
+int sensor_set_frequency(uint32_t f)
 {
     return rtl_set_frequency(sensor, f);
 }
 
-uint32_t signal_get_sample_rate()
+uint32_t sensor_get_sample_rate()
 {
     return rtl_sample_rate(sensor);
 }
 
-int signal_set_sample_rate(uint32_t fs)
+int sensor_set_sample_rate(uint32_t fs)
 {
     return rtl_set_sample_rate(sensor, fs);
-}
-
-void signal_source_init()
-{
-    rtl_init(&sensor, DEV_INDEX);
-}
-
-void signal_source_start()
-{
-    DEBUG("Starting signal source...\n");
-    if (running)
-        return;
-
-    running = 1;
-    callback_list = list_alloc();
-    pthread_mutex_init(&callback_mutex, NULL);
-    pthread_create(&worker_thread, NULL, worker, sensor);
-    DEBUG("Signal source started.\n");
 }
 
 void signal_source_add_callback(signal_source_callback callback)
@@ -108,7 +113,20 @@ void signal_source_remove_callbacks()
     pthread_mutex_unlock(&callback_mutex);
 }
 
-void signal_source_stop()
+void sensor_start()
+{
+    DEBUG("Starting signal source...\n");
+    if (running)
+        return;
+
+    running = 1;
+    callback_list = list_alloc();
+    pthread_mutex_init(&callback_mutex, NULL);
+    pthread_create(&worker_thread, NULL, worker, sensor);
+    DEBUG("Signal source started.\n");
+}
+
+void sensor_stop()
 {
     DEBUG("Stopping signal source...\n");
     if (!running)
@@ -122,6 +140,9 @@ void signal_source_stop()
     DEBUG("Signal source stopped.\n");
 }
 
-void signal_source_close() {
+void sensor_close()
+{
+    DEBUG("Closing signal source...\n");
+
     rtl_close(sensor);
 }

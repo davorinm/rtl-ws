@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include "ws_handler.h"
 #include "../settings.h"
-#include "../tools/log.h"
+#include "../tools/helpers.h"
 #include "../mongoose/mongoose.h"
 
 static const char *s_listen_on = "localhost:8000";

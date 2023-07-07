@@ -4,7 +4,7 @@ TARGET=rtl-ws-server
 VPATH=$(SRCDIR)
 
 CC=gcc
-PERF_OPTS=-O3 -ffast-math -funroll-loops -Wall
+PERF_OPTS=-O3 -ffast-math -funroll-loops -Wall -Wextra -std=gnu99
 PERF_LIBS=-lpthread -lm -lfftw3
 PPDEFS=-DRTL_WS_DEBUG
 
@@ -12,27 +12,25 @@ PROGRAM=$(BUILDDIR)/$(TARGET)
 CSOURCEFILES=$(shell find $(SRCDIR) -iname \*.c)
 COBJFILES=$(subst .c,.o,$(subst $(SRCDIR),$(BUILDDIR),$(CSOURCEFILES)))
 
-.PHONY: help wsdr pluto all build prepare clean run dockerBuild dockerRun
+.PHONY: build pluto all prepare clean run dockerBuild dockerRun dockerClean
 
 #=====================================================
 
-help:
-	@echo "Make wsdr, pluto"
-
-wsdr: PPDEFS+=-DRTLSDR_SENSOR
-wsdr: PERF_LIBS+=-lrtlsdr
-wsdr: all
+build: PERF_LIBS+=-lrtlsdr
+build: PPDEFS+=-DSENSOR_RTLSDR
+build: $(PROGRAM)
 
 pluto: CC=arm-linux-gnueabihf-gcc
-pluto: PERF_OPTS+=-mfloat-abi=hard --sysroot=files/sysroot-v0.37 -std=gnu99
+pluto: PERF_OPTS+=-mfloat-abi=hard --sysroot=files/sysroot-v0.37
 pluto: PERF_LIBS+=-liio
-pluto: all
+pluto: PPDEFS+=-DSENSOR_PLUTO
+pluto: $(PROGRAM)
 
 #=====================================================
-
-build: $(PROGRAM)
 	
 all: clean build
+
+#=====================================================
 	
 # Linker
 $(PROGRAM): $(COBJFILES) $(CPPOBJFILES)
@@ -44,12 +42,16 @@ $(BUILDDIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(PERF_OPTS) $(PPDEFS) -c -B $(SRCDIR) $< -o $@
 
+#=====================================================
+
 clean:
 	rm -rf $(BUILDDIR)
 
 run: build
 	# open http://localhost:8000
 	./build/rtl-ws-server
+
+#=====================================================
 
 dockerBuild:
 	docker build -t build_system -f Dockerfile .

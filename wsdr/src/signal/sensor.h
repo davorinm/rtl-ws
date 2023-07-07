@@ -5,24 +5,24 @@
 
 typedef void (*signal_source_callback)(const cmplx_u8 *, int);
 
-uint32_t signal_get_sample_rate();
+void sensor_init();
 
-int signal_set_sample_rate(uint32_t fs);
+uint32_t sensor_get_freq();
 
-uint32_t signal_get_freq();
+int sensor_set_frequency(uint32_t f);
 
-int signal_set_frequency(uint32_t f);
+uint32_t sensor_get_sample_rate();
 
-void signal_source_init();
-
-void signal_source_start();
+int sensor_set_sample_rate(uint32_t fs);
 
 void signal_source_add_callback(signal_source_callback callback);
 
 void signal_source_remove_callbacks();
 
-void signal_source_stop();
+void sensor_start();
 
-void signal_source_close();
+void sensor_stop();
+
+void sensor_close();
 
 #endif

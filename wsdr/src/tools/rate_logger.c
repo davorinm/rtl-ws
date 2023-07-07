@@ -1,14 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include "common.h"
-#include "log.h"
+#include "helpers.h"
 #include "rate_logger.h"
 
 struct rate_logger 
 {
     char* logger_name;
-    int log_rate_ms;
+    uint64_t log_rate_ms;
     uint64_t received_samples;
     uint64_t last_timestamp;
 };

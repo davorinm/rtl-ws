@@ -4,7 +4,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "tools/log.h"
+#include "tools/helpers.h"
 #include "web/web_handler.h"
 #include "dsp/rf_decimator.h"
 #include "audio_main.h"
@@ -14,11 +14,16 @@ static volatile int force_exit = 0;
 
 static void sighandler(int sig)
 {
+    UNUSED(sig);
+
     force_exit = 1;
 }
 
 int main(int argc, char **argv)
 {
+    UNUSED(argc);
+    UNUSED(argv);
+
     signal(SIGINT, sighandler);
 
     INFO("Initializing audio processing...\n");

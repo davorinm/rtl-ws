@@ -1,6 +1,7 @@
 #ifndef DSP_COMMON_H
 #define DSP_COMMON_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <math.h>
 

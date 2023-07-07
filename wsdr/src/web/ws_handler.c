@@ -3,12 +3,12 @@
 
 #include "ws_handler.h"
 #include "../dsp/cbb_main.h"
-#include "../signal/signal_source.h"
+#include "../signal/sensor.h"
 #include "../audio_main.h"
-#include "../tools/log.h"
+#include "../tools/helpers.h"
 #include "../settings.h"
 
-#define SEND_BUFFER_SIZE 1024 * 64
+#define SEND_BUFFER_SIZE 1024 * 32
 
 #define FREQ_CMD "freq"
 #define SAMPLE_RATE_CMD "bw"
@@ -20,10 +20,10 @@
 
 static volatile int spectrum_gain = 0;
 
-static char *send_buffer = NULL;
-
 void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, struct per_session_data__rtl_ws *pss)
 {
+    UNUSED(c);
+
     int f = 0;
     int bw = 0;
     char *in_buffer = NULL;
@@ -35,14 +35,14 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
     {
         f = atoi(&command.ptr[strlen(FREQ_CMD)]) * 1000;
         INFO("Trying to tune to %d Hz...\n", f);
-        signal_set_frequency(f);
+        sensor_set_frequency(f);
     }
     else if (mg_strcmp(command, mg_str(SAMPLE_RATE_CMD)) == 0)
     {
         bw = atoi(&in_buffer[strlen(SAMPLE_RATE_CMD)]) * 1000;
         INFO("Trying to set sample rate to %d Hz...\n", bw);
-        signal_set_sample_rate(bw);
-        rf_decimator_set_parameters(cbb_rf_decimator(), signal_get_sample_rate(), signal_get_sample_rate() / DECIMATED_TARGET_BW_HZ);
+        sensor_set_sample_rate(bw);
+        rf_decimator_set_parameters(cbb_rf_decimator(), sensor_get_sample_rate(), sensor_get_sample_rate() / DECIMATED_TARGET_BW_HZ);
     }
     else if (mg_strcmp(command, mg_str(SPECTRUM_GAIN_CMD)) == 0)
     {

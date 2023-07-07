@@ -41,8 +41,9 @@ window.onresize = function (event) {
 };
 
 function initialize() {
+    let url = get_appropriate_ws_url() + "/websocket"
     try {
-        socket_lm = new WebSocket(get_appropriate_ws_url() + "/websocket");
+        socket_lm = new WebSocket(url);
         socket_lm.binaryType = "arraybuffer";
         console.log("WebSocket instantiated");
 
@@ -250,7 +251,6 @@ function upateFrequencyBands() {
     freqtext = (real_frequency + real_bandwidth / 2) / 1000 + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, bandCtxWidth - w, textVerticalPosition);
-
 
     bandCtx.beginPath();
     bandCtx.lineWidth = "1";

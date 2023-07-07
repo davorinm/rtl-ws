@@ -5,17 +5,18 @@
 #include <math.h>
 
 #include "cbb_main.h"
-#include "../tools/common.h"
-#include "../spectrum.h"
-#include "../signal/signal_source.h"
-#include "../tools/log.h"
 #include "rf_decimator.h"
+#include "../spectrum.h"
+#include "../signal/sensor.h"
 #include "../tools/rate_logger.h"
+#include "../tools/helpers.h"
 #include "../settings.h"
 
 #define SPECTRUM_EST_MS     250
 #define FFT_POINTS          1024
 #define FFT_AVERAGE         6
+
+// complex baseband processing
 
 static pthread_mutex_t spectrum_mutex;
 static struct spectrum* spect;
@@ -28,6 +29,8 @@ static volatile int new_spectrum_available = 0;
 
 static void log_data_rate(const cmplx_u8* signal, int len)
 {
+    UNUSED(signal);
+
     rate_logger_log(cbb_rate_log, len);
 }
 
@@ -73,15 +76,15 @@ void cbb_init()
     cbb_rate_log = rate_logger_alloc();
     rate_logger_set_parameters(cbb_rate_log, "CBB", 60000);
     
-    signal_source_init();
+    sensor_init();
 
     decim = rf_decimator_alloc();
-    rf_decimator_set_parameters(decim, signal_get_sample_rate(), signal_get_sample_rate() / DECIMATED_TARGET_BW_HZ);
+    rf_decimator_set_parameters(decim, sensor_get_sample_rate(), sensor_get_sample_rate() / DECIMATED_TARGET_BW_HZ);
     
     pthread_mutex_init(&spectrum_mutex, NULL);
     spect = spectrum_alloc(FFT_POINTS);
 
-    signal_source_start();
+    sensor_start();
     signal_source_add_callback(log_data_rate);
     signal_source_add_callback(decimate);
     signal_source_add_callback(estimate_spectrum);
@@ -99,6 +102,8 @@ int cbb_new_spectrum_available()
 
 int cbb_get_spectrum_payload(char* buf, int buf_len, int spectrum_gain_db)
 {
+    UNUSED(buf_len);
+
     static double power_spectrum_local[FFT_POINTS];
     int spectrum_averaging_count_local = 0;
     int idx = 0;
@@ -132,7 +137,7 @@ void cbb_close()
 {
     signal_source_remove_callbacks();
 
-    signal_source_stop();
+    sensor_stop();
  
     rf_decimator_free(decim);
 
@@ -140,7 +145,7 @@ void cbb_close()
 
     pthread_mutex_destroy(&spectrum_mutex);
 
-    signal_source_close();
+    sensor_close();
 
     rate_logger_free(cbb_rate_log);
 }
