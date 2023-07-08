@@ -26,7 +26,8 @@
 			"helpers.h": "c",
 			"sensor.h": "c",
 			"resample.h": "c",
-			"stdint.h": "c"
+			"stdint.h": "c",
+			"list.h": "c"
 		},
 		"makefile.launchConfigurations": [
 			{

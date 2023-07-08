@@ -161,7 +161,8 @@ void ws_handler_data(struct mg_connection *c, struct per_session_data__rtl_ws *p
         {
             ws_update_spectrum(c);
         }
-        else if (pss->audio_data == 1 && audio_new_audio_available())
+
+        if (pss->audio_data == 1 && audio_new_audio_available())
         {
             ws_update_audio(c);
         }

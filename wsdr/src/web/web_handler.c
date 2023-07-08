@@ -111,16 +111,6 @@ static void *timer_fn(void *arg)
 
         struct per_session_data__rtl_ws *pss = (struct per_session_data__rtl_ws *)c->fn_data;
         ws_handler_data(c, pss);
-
-        // Broadcast "hi" message to all connected websocket clients.
-        // Traverse over all connections
-        // for (struct mg_connection *c = mgr->conns; c != NULL; c = c->next)
-        // {
-        //     // Send only to marked connections
-        //     if (c->data[0] == 'W') {
-        //         mg_ws_send(c, "hi", 2, WEBSOCKET_OP_TEXT);
-        //     }
-        // }
     }
 
     return 0;

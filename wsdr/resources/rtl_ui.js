@@ -365,7 +365,7 @@ function start_or_stop() {
 }
 
 async function initialize_sound() {
-    audioContext = new AudioContext({ sampleRate: 48000 });
+    audioContext = new AudioContext({ sampleRate: 44100 });
     await audioContext.audioWorklet.addModule("samples-processor.js");
 
     samplesProcessorNode = new AudioWorkletNode(audioContext, "samples-processor");

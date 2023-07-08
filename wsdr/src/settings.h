@@ -11,7 +11,7 @@
 #define HTML_PATH "./resources"
 
 // Bandwidth
-#define DECIMATED_TARGET_BW_HZ  48000 * 4
+#define DECIMATED_TARGET_BW_HZ  (44100 * 4)
 
 // RTL SDR
 #define RTL_DEFAULT_SAMPLE_RATE 2048000
