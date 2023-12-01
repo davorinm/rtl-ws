@@ -13,7 +13,7 @@ struct list
     volatile int len;
 };
 
-static inline void internal_list_add(struct list* l, struct _node* new_node)
+static inline void internal_list_add(list* l, struct _node* new_node)
 {
     struct _node* node = l->root;
 
@@ -32,19 +32,19 @@ static inline void internal_list_add(struct list* l, struct _node* new_node)
     l->len++;
 }
 
-struct list* list_alloc()
+list* list_alloc()
 {
-    return (struct list*) calloc(1, sizeof(struct list));
+    return (list*) calloc(1, sizeof(list));
 }
 
-void list_add(struct list* l, void* data)
+void list_add(list* l, void* data)
 {
     struct _node* node = (struct _node*) calloc(1, sizeof(struct _node));
     node->data = data;
     internal_list_add(l, node);
 }
 
-void list_apply(struct list* l, void (*func)(void*))
+void list_apply(list* l, void (*func)(void*))
 {
     struct _node* node = l->root;
 
@@ -55,7 +55,7 @@ void list_apply(struct list* l, void (*func)(void*))
     }
 }
 
-void list_apply2(struct list* l, void (*func)(void*,void*), void* user)
+void list_apply2(list* l, void (*func)(void*,void*), void* user)
 {
     struct _node* node = l->root;
 
@@ -66,12 +66,12 @@ void list_apply2(struct list* l, void (*func)(void*,void*), void* user)
     }
 }
 
-int list_length(const struct list* l)
+int list_length(const list* l)
 {
     return l->len;
 }
 
-void* list_peek(struct list* l)
+void* list_peek(list* l)
 {
     struct _node* node = l->root;
     void* data = NULL;
@@ -84,7 +84,7 @@ void* list_peek(struct list* l)
     return data;
 }
 
-void* list_poll(struct list* l)
+void* list_poll(list* l)
 {
     struct _node* node = l->root;
     void* data = NULL;
@@ -100,7 +100,7 @@ void* list_poll(struct list* l)
     return data;
 }
 
-void list_poll_to_list(struct list* from, struct list* to)
+void list_poll_to_list(list* from, list* to)
 {
     struct _node* node = from->root;
 
@@ -113,7 +113,7 @@ void list_poll_to_list(struct list* from, struct list* to)
     }
 }
 
-void list_clear(struct list* l)
+void list_clear(list* l)
 {
     while (list_length(l) > 0)
     {
@@ -121,7 +121,7 @@ void list_clear(struct list* l)
     }
 }
 
-void list_free(struct list* l)
+void list_free(list* l)
 {
     free(l);
 }

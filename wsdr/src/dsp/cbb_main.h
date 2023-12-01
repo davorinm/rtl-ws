@@ -5,7 +5,7 @@
 
 void cbb_init();
 
-struct rf_decimator *cbb_rf_decimator();
+rf_decimator *cbb_rf_decimator();
 
 int cbb_new_spectrum_available();
 

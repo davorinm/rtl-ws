@@ -10,7 +10,7 @@
 
 #define AUDIO_BUFFER_POOL 50
 
-static struct rate_logger *audio_rate_log = NULL;
+static rate_logger *audio_rate_log = NULL;
 static float *demod_buffer = NULL;
 static int demod_buffer_len = 0;
 static float *work_audio_buffer = NULL;

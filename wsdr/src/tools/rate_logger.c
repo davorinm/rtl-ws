@@ -12,14 +12,14 @@ struct rate_logger
     uint64_t last_timestamp;
 };
 
-struct rate_logger* rate_logger_alloc()
+rate_logger* rate_logger_alloc()
 {
-    struct rate_logger* r = (struct rate_logger*) calloc(1, sizeof(struct rate_logger));
+    rate_logger* r = (rate_logger*) calloc(1, sizeof(rate_logger));
     r->log_rate_ms = 10000;
     return r;
 }
 
-void rate_logger_set_parameters(struct rate_logger* r, const char* logger_name, int log_rate_ms)
+void rate_logger_set_parameters(rate_logger* r, const char* logger_name, int log_rate_ms)
 {
     r->log_rate_ms = log_rate_ms;
     
@@ -30,7 +30,7 @@ void rate_logger_set_parameters(struct rate_logger* r, const char* logger_name, 
     strcpy(r->logger_name, logger_name);
 }
 
-void rate_logger_log(struct rate_logger* r, int sample_count)
+void rate_logger_log(rate_logger* r, int sample_count)
 {
     uint64_t diff_ms = 0;
 
@@ -48,7 +48,7 @@ void rate_logger_log(struct rate_logger* r, int sample_count)
     }
 }
 
-void rate_logger_free(struct rate_logger* r)
+void rate_logger_free(rate_logger* r)
 {
     if (r->logger_name != NULL)
         free(r->logger_name);

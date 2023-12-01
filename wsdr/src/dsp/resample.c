@@ -1,7 +1,7 @@
 #include <string.h>
 #include "resample.h"
 
-static float half_band_kernel[] = {0.01824f, 0.0f, -0.11614f, 0.0f, 0.34790f, 0.5f, 0.34790f, 0.0f, -0.11614f, 0.0f, 0.01824f};
+static float half_band_kernel[] = {0.01824, 0.0, -0.11614, 0.0, 0.34790, 0.5, 0.34790, 0.0, -0.11614, 0.0, 0.01824};
 
 void halfband_decimate(const float *input, float *output, int output_len, float *delay)
 {

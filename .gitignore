@@ -2,3 +2,4 @@ plutoExample/build
 plutoExample/files
 wsdr/build
 wsdr/files
+*.o

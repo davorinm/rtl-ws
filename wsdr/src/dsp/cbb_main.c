@@ -19,9 +19,9 @@
 // complex baseband processing
 
 static pthread_mutex_t spectrum_mutex;
-static struct spectrum *spect;
-static struct rf_decimator *decim = NULL;
-static struct rate_logger *cbb_rate_log = NULL;
+static spectrum *spect;
+static rf_decimator *decim = NULL;
+static rate_logger *cbb_rate_log = NULL;
 static double power_spectrum_transfer[FFT_POINTS] = {0};
 static int spectrum_averaging_count = 0;
 static uint64_t last_spectrum_estimation = 0;
@@ -90,7 +90,7 @@ void cbb_init()
     signal_source_add_callback(estimate_spectrum);
 }
 
-struct rf_decimator *cbb_rf_decimator()
+rf_decimator *cbb_rf_decimator()
 {
     return decim;
 }

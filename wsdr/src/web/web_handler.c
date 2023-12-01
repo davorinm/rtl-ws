@@ -125,7 +125,7 @@ void web_init()
 
     // Mongoose init
     mg_mgr_init(&mgr); // Initialise event manager
-    // mg_log_set(MG_LL_DEBUG);  // Set log level
+    mg_log_set(MG_LL_DEBUG);  // Set log level
 
     printf("Starting WS listener on %s/websocket\n", s_listen_on);
 

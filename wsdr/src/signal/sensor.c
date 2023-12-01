@@ -7,13 +7,8 @@
 #include "../tools/list.h"
 #include "../tools/helpers.h"
 
-#ifdef SENSOR_RTLSDR
 #include "sensor_rtlsdr.h"
-#endif
-
-#ifdef SENSOR_PLUTO
 #include "sensor_pluto.h"
-#endif
 
 #define DEV_INDEX 0
 
@@ -70,13 +65,7 @@ static void *worker(void *user)
 
 void sensor_init()
 {
-#ifdef SENSOR_RTLSDR
     rtl_init(&sensor, DEV_INDEX);
-#endif
-
-#ifdef SENSOR_PLUTO
-    pluto_init(&sensor);
-#endif
 }
 
 uint32_t sensor_get_freq()

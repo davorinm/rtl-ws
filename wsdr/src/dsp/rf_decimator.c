@@ -33,26 +33,26 @@ struct rf_decimator
 static void callback_notifier(void *callback, void *decim)
 {
     rf_decimator_callback f = (rf_decimator_callback)callback;
-    struct rf_decimator *d = (struct rf_decimator *)decim;
+    rf_decimator *d = (rf_decimator *)decim;
     f(d->resampled_signal, d->resampled_signal_len);
 }
 
-struct rf_decimator *rf_decimator_alloc()
+rf_decimator *rf_decimator_alloc()
 {
-    struct rf_decimator *d = (struct rf_decimator *)calloc(1, sizeof(struct rf_decimator));
+    rf_decimator *d = (rf_decimator *)calloc(1, sizeof(rf_decimator));
     pthread_mutex_init(&(d->mutex), NULL);
     d->callback_list = list_alloc();
     return d;
 }
 
-void rf_decimator_add_callback(struct rf_decimator *d, rf_decimator_callback callback)
+void rf_decimator_add_callback(rf_decimator *d, rf_decimator_callback callback)
 {
     pthread_mutex_lock(&(d->mutex));
     list_add(d->callback_list, callback);
     pthread_mutex_unlock(&(d->mutex));
 }
 
-int rf_decimator_set_parameters(struct rf_decimator *d, double sample_rate, int down_factor)
+int rf_decimator_set_parameters(rf_decimator *d, double sample_rate, int down_factor)
 {
     int r = -1;
 
@@ -79,7 +79,7 @@ int rf_decimator_set_parameters(struct rf_decimator *d, double sample_rate, int 
     return r;
 }
 
-int rf_decimator_decimate_cmplx_u8(struct rf_decimator *d, const cmplx_u8 *complex_signal, int len)
+int rf_decimator_decimate_cmplx_u8(rf_decimator *d, const cmplx_u8 *complex_signal, int len)
 {
     int current_idx = 0;
     int remaining = len;
@@ -120,14 +120,14 @@ int rf_decimator_decimate_cmplx_u8(struct rf_decimator *d, const cmplx_u8 *compl
     return 0;
 }
 
-void rf_decimator_remove_callbacks(struct rf_decimator *d)
+void rf_decimator_remove_callbacks(rf_decimator *d)
 {
     pthread_mutex_lock(&(d->mutex));
     list_clear(d->callback_list);
     pthread_mutex_unlock(&(d->mutex));
 }
 
-void rf_decimator_free(struct rf_decimator *d)
+void rf_decimator_free(rf_decimator *d)
 {
     rf_decimator_remove_callbacks(d);
     pthread_mutex_destroy(&(d->mutex));

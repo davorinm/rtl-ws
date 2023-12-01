@@ -1,29 +1,28 @@
 SRCDIR=src
 BUILDDIR=build
-TARGET=rtl-ws-server
-VPATH=$(SRCDIR)
+EXECUTABLE=wsdr
 
 CC=gcc
 PERF_OPTS=-O3 -ffast-math -funroll-loops -Wall -Wextra -std=gnu99
 PERF_LIBS=-lpthread -lm -lfftw3
 PPDEFS=-DRTL_WS_DEBUG
 
-PROGRAM=$(BUILDDIR)/$(TARGET)
+PROGRAM=$(BUILDDIR)/$(EXECUTABLE)
 CSOURCEFILES=$(shell find $(SRCDIR) -iname \*.c)
-COBJFILES=$(subst .c,.o,$(subst $(SRCDIR),$(BUILDDIR),$(CSOURCEFILES)))
+COBJFILES=$(subst .c,.o,$(CSOURCEFILES))
 
-.PHONY: build pluto all prepare clean run dockerBuild dockerRun dockerClean
+DOCKERIMAGE=build_system
+
+.PHONY: build pluto all prepare clean run docker dockerBuild dockerRun dockerClean
 
 #=====================================================
 
 build: PERF_LIBS+=-lrtlsdr
-build: PPDEFS+=-DSENSOR_RTLSDR
 build: $(PROGRAM)
 
 pluto: CC=arm-linux-gnueabihf-gcc
 pluto: PERF_OPTS+=-mfloat-abi=hard --sysroot=files/sysroot-v0.37
 pluto: PERF_LIBS+=-liio
-pluto: PPDEFS+=-DSENSOR_PLUTO
 pluto: $(PROGRAM)
 
 #=====================================================
@@ -33,12 +32,12 @@ all: clean build
 #=====================================================
 	
 # Linker
-$(PROGRAM): $(COBJFILES) $(CPPOBJFILES)
+$(PROGRAM): $(COBJFILES)
 	$(CC) $(PERF_OPTS) $^ $(PERF_LIBS) -o $@
-	@ls -l build/rtl-ws-server >> buildLog.txt
+	@ls -l $(PROGRAM) >> buildLog.txt
 
 # Compile files
-$(BUILDDIR)/%.o: %.c
+$(BUILDDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(PERF_OPTS) $(PPDEFS) -c -B $(SRCDIR) $< -o $@
 
@@ -53,13 +52,20 @@ run: build
 
 #=====================================================
 
+docker: dockerClean dockerBuild dockerRun
+
 dockerBuild:
-	docker build -t build_system -f Dockerfile .
+	docker build -t $(DOCKERIMAGE) -f Dockerfile .
 
 dockerRun:
-	docker run --rm -ti -v $(shell pwd):/project -p 8000:8000 build_system make pluto
+	docker run --rm -ti -v $(shell pwd):/project -p 8000:8000 $(DOCKERIMAGE) make pluto
 
 dockerClean: 
-	docker rm build_system -f && \
-	docker rmi build_system
+	docker rm $(DOCKERIMAGE) -f && \
+	docker rmi $(DOCKERIMAGE)
+
+#=====================================================
 	
+uploadAndRun:
+	scp $(PROGRAM) root@192.168.1.50:/tmp && \
+	ssh root@192.168.1.50 /tmp/$(EXECUTABLE)
