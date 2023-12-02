@@ -80,24 +80,6 @@ int spectrum_add_cmplx_s32(struct spectrum* s, const cmplx_s32* src, double* pow
     return 0;
 }
 
-int spectrum_add_real_f32(struct spectrum* s, const float* src, double* power_spectrum, int len)
-{
-    int i = 0;
-    
-    if (len != s->N)
-        return -1;
-
-    for (i = 0; i < s->N; i++)
-    {
-        s->in[i][0] = src[i];
-        s->in[i][1] = 0;
-    }  
-
-    calculate_power_spectrum(s, power_spectrum, len);
-
-    return 0;
-}
-
 void spectrum_free(struct spectrum* s)
 {
     fftw_destroy_plan(s->plan);

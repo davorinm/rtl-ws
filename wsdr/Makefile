@@ -9,20 +9,26 @@ PPDEFS=-DRTL_WS_DEBUG
 
 PROGRAM=$(BUILDDIR)/$(EXECUTABLE)
 CSOURCEFILES=$(shell find $(SRCDIR) -iname \*.c)
-COBJFILES=$(subst .c,.o,$(CSOURCEFILES))
+COBJFILES=$(subst .c,.o,$(subst $(SRCDIR),$(BUILDDIR),$(CSOURCEFILES)))
 
 DOCKERIMAGE=build_system
 
-.PHONY: build pluto all prepare clean run docker dockerBuild dockerRun dockerClean
+.PHONY: build pluto build-pluto all clean run docker dockerBuild dockerRun dockerClean uploadAndRun
 
 #=====================================================
 
 build: PERF_LIBS+=-lrtlsdr
+build: PPDEFS+=-DSENSOR_RTLSDR
 build: $(PROGRAM)
+
+build-pluto: PERF_LIBS+=-liio
+build-pluto: PPDEFS+=-DSENSOR_PLUTO
+build-pluto: $(PROGRAM)
 
 pluto: CC=arm-linux-gnueabihf-gcc
 pluto: PERF_OPTS+=-mfloat-abi=hard --sysroot=files/sysroot-v0.37
 pluto: PERF_LIBS+=-liio
+pluto: PPDEFS+=-DSENSOR_PLUTO
 pluto: $(PROGRAM)
 
 #=====================================================

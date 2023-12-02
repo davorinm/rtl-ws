@@ -7,8 +7,11 @@
 #include "../tools/list.h"
 #include "../tools/helpers.h"
 
+#ifdef SENSOR_RTLSDR
 #include "sensor_rtlsdr.h"
+#elif SENSOR_PLUTO
 #include "sensor_pluto.h"
+#endif
 
 #define DEV_INDEX 0
 
