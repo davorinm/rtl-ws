@@ -10,6 +10,8 @@
 #include "audio_main.h"
 #include "dsp/cbb_main.h"
 
+#include "tools/timer.h"
+
 static volatile int force_exit = 0;
 
 static void sighandler(int sig)
@@ -24,6 +26,12 @@ int main(int argc, char **argv)
     UNUSED(argc);
     UNUSED(argv);
 
+    // Timing test
+    time_test_1();
+    time_test_2();
+    time_test_3();
+
+    // Signal for Ctrl+C
     signal(SIGINT, sighandler);
 
     INFO("Initializing audio processing...\n");

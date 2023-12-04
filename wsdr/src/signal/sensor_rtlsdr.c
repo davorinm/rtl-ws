@@ -9,54 +9,81 @@
 #include "../tools/helpers.h"
 #include "../settings.h"
 
+#define RTL_DEFAULT_DEVICE_INDEX 0
 #define RTL_DEFAULT_GAIN 25.4
 
-struct rtl_dev
+typedef struct rtl_dev
 {
     rtlsdr_dev_t *dev;
     uint32_t f;
     uint32_t fs;
     double gain;
-};
+} rtl_dev_t;
 
-int rtl_init(struct rtl_dev **dev, int dev_index)
+static rtl_dev_t *dev = NULL;
+
+int rtl_init()
 {
     int r = 0;
-    DEBUG("rtl_init called with dev == %lx, dev_index == %d\n", (unsigned long)dev, dev_index);
-    *dev = (struct rtl_dev *)calloc(1, sizeof(struct rtl_dev));
-    r = rtlsdr_open(&((*dev)->dev), dev_index);
-    if (r >= 0)
-    {
-        if ((r = rtl_set_sample_rate(*dev, RTL_DEFAULT_SAMPLE_RATE)) >= 0 && (r = rtl_set_frequency(*dev, RTL_DEFAULT_FREQUENCY)) >= 0)
-        {
-            DEBUG("Setting rtl gain mode to manual...\n");
-            r = rtlsdr_set_tuner_gain_mode((*dev)->dev, 1);
-            if (r < 0)
-            {
-                ERROR("Failed to enable manual gain.\n");
-            }
+    DEBUG("rtl_init called with dev == %lx, dev_index == %d\n", (unsigned long)dev, RTL_DEFAULT_DEVICE_INDEX);
+    // rtl_close();
+    // New
+    dev = (rtl_dev_t *)calloc(1, sizeof(rtl_dev_t));
 
-            DEBUG("Setting rtl gain to %f...\n", RTL_DEFAULT_GAIN);
-            if ((r = rtl_set_gain(*dev, RTL_DEFAULT_GAIN)) >= 0)
-            {
-                r = rtlsdr_reset_buffer((*dev)->dev);
-                if (r < 0)
-                {
-                    ERROR("Failed to reset buffers.\n");
-                }
-            }
-        }
-    }
-    else
+    // Open
+    DEBUG("rtlsdr_open...\n");
+    r = rtlsdr_open(&dev->dev, RTL_DEFAULT_DEVICE_INDEX);
+    if (r < 0)
     {
-        ERROR("Failed to open rtlsdr device #%d.\n", dev_index);
+        ERROR("Failed to open rtlsdr device #%d.\n", RTL_DEFAULT_DEVICE_INDEX);
+        return r;
+    }
+
+    DEBUG("rtl_set_sample_rate...\n");
+    r = rtl_set_sample_rate(RTL_DEFAULT_SAMPLE_RATE);
+    if (r < 0)
+    {
+        ERROR("Failed to set sample rate \n");
+        return r;
+    }
+
+    DEBUG("rtl_set_frequency...\n");
+    r = rtl_set_frequency(RTL_DEFAULT_FREQUENCY);
+    if (r < 0)
+    {
+        ERROR("Failed to set frequency \n");
+        return r;
+    }
+
+    DEBUG("Setting rtl gain mode to manual...\n");
+    r = rtlsdr_set_tuner_gain_mode(dev->dev, 1);
+    if (r < 0)
+    {
+        ERROR("Failed to enable manual gain.\n");
+        return r;
+    }
+
+    DEBUG("Setting rtl gain to %f...\n", RTL_DEFAULT_GAIN);
+    r = rtl_set_gain(RTL_DEFAULT_GAIN);
+    if (r < 0)
+    {
+
+        ERROR("Failed to set gain.\n");
+        return r;
+    }
+
+    r = rtlsdr_reset_buffer(dev->dev);
+    if (r < 0)
+    {
+        ERROR("Failed to reset buffers.\n");
+        return r;
     }
 
     DEBUG("rtl_init returns %d\n", r);
     return r;
 }
 
-int rtl_set_frequency(struct rtl_dev *dev, uint32_t f)
+int rtl_set_frequency(uint32_t f)
 {
     int r = 0;
     if (dev->f != f)
@@ -75,7 +102,7 @@ int rtl_set_frequency(struct rtl_dev *dev, uint32_t f)
     return r;
 }
 
-int rtl_set_sample_rate(struct rtl_dev *dev, uint32_t fs)
+int rtl_set_sample_rate(uint32_t fs)
 {
     int r = 0;
     if (dev->fs != fs)
@@ -94,7 +121,7 @@ int rtl_set_sample_rate(struct rtl_dev *dev, uint32_t fs)
     return r;
 }
 
-int rtl_set_gain(struct rtl_dev *dev, double gain)
+int rtl_set_gain(double gain)
 {
     int r = 0;
     if (dev->gain != gain)
@@ -113,27 +140,27 @@ int rtl_set_gain(struct rtl_dev *dev, double gain)
     return r;
 }
 
-uint32_t rtl_freq(const struct rtl_dev *dev)
+uint32_t rtl_freq()
 {
     return dev->f;
 }
 
-uint32_t rtl_sample_rate(const struct rtl_dev *dev)
+uint32_t rtl_sample_rate()
 {
     return dev->fs;
 }
 
-double rtl_gain(const struct rtl_dev *dev)
+double rtl_gain()
 {
     return dev->gain;
 }
 
-int rtl_read_async(struct rtl_dev *dev, void (*callback)(unsigned char *, uint32_t, void *), void *user)
+int rtl_read_async(void (*callback)(unsigned char *, uint32_t, void *), void *user)
 {
     return rtlsdr_read_async(dev->dev, (rtlsdr_read_async_cb_t)callback, user, 0, 0);
 }
 
-void rtl_cancel(struct rtl_dev *dev)
+void rtl_cancel()
 {
     if (dev->dev != NULL)
     {
@@ -144,7 +171,7 @@ void rtl_cancel(struct rtl_dev *dev)
     }
 }
 
-void rtl_close(struct rtl_dev *dev)
+void rtl_close()
 {
     DEBUG("rtl_close called with dev == %lx\n", (unsigned long)dev);
     if (dev->dev != NULL)

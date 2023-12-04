@@ -53,8 +53,8 @@ int spectrum_add_cmplx_u8(struct spectrum* s, const cmplx_u8* src, double* power
 
     for (i = 0; i < s->N; i++)
     {
-        s->in[i][0] = (((double) real_cmplx_u8(src[i])) - 128) / 128;
-        s->in[i][1] = (((double) imag_cmplx_u8(src[i])) - 128) / 128;
+        s->in[i][0] = (((double) real_cmplx_u8(src[i])) - (UINT8_MAX/2)) / (UINT8_MAX/2);
+        s->in[i][1] = (((double) imag_cmplx_u8(src[i])) - (UINT8_MAX/2)) / (UINT8_MAX/2);
     }  
 
     calculate_power_spectrum(s, power_spectrum, len);

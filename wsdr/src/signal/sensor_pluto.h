@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-struct pluto_dev;
-
 int pluto_init();
 
 int pluto_set_frequency(uint32_t f);

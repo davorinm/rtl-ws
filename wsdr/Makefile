@@ -54,7 +54,7 @@ clean:
 
 run: build
 	# open http://localhost:8000
-	./build/rtl-ws-server
+	./$(PROGRAM)
 
 #=====================================================
 

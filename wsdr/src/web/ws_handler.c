@@ -18,8 +18,6 @@
 #define START_AUDIO_CMD "start_audio"
 #define STOP_AUDIO_CMD "stop_audio"
 
-static volatile int spectrum_gain = 0;
-
 static char *spectrum_buffer = NULL;
 static char *audio_buffer = NULL;
 static char *data_buffer = NULL;
@@ -30,6 +28,7 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
 
     int f = 0;
     int bw = 0;
+    int spectrum_gain = 0;
     char *in_buffer = NULL;
 
     struct mg_str command = wm->data;
@@ -41,18 +40,18 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
         INFO("Trying to tune to %d Hz...\n", f);
         sensor_set_frequency(f);
     }
-    else if (mg_strcmp(command, mg_str(SAMPLE_RATE_CMD)) == 0)
+    else if (mg_strstr(command, mg_str(SAMPLE_RATE_CMD)))
     {
         bw = atoi(&in_buffer[strlen(SAMPLE_RATE_CMD)]) * 1000;
         INFO("Trying to set sample rate to %d Hz...\n", bw);
         sensor_set_sample_rate(bw);
         rf_decimator_set_parameters(cbb_rf_decimator(), sensor_get_sample_rate(), sensor_get_sample_rate() / DECIMATED_TARGET_BW_HZ);
     }
-    else if (mg_strcmp(command, mg_str(SPECTRUM_GAIN_CMD)) == 0)
+    else if (mg_strstr(command, mg_str(SPECTRUM_GAIN_CMD)))
     {
-        spectrum_gain = atoi(&in_buffer[strlen(SPECTRUM_GAIN_CMD)]);
+        spectrum_gain = atoi(&command.ptr[strlen(SPECTRUM_GAIN_CMD)]);
         INFO("Spectrum gain set to %d dB\n", spectrum_gain);
-        // rtl_set_gain();
+        sensor_set_gain(spectrum_gain);
     }
     else if (mg_strcmp(command, mg_str(START_CMD)) == 0)
     {
@@ -94,7 +93,7 @@ static void ws_update_spectrum(struct mg_connection *c)
     n = sprintf(spectrum_buffer, "S");
 
     // Write spectrum
-    nn = cbb_get_spectrum_payload(spectrum_buffer + n, SEND_BUFFER_SIZE - n, spectrum_gain);
+    nn = cbb_get_spectrum_payload(spectrum_buffer + n, SEND_BUFFER_SIZE - n, sensor_get_gain());
 
     // Send data
     nnn = mg_ws_send(c, spectrum_buffer, n + nn, WEBSOCKET_OP_BINARY);
@@ -135,7 +134,7 @@ static void ws_update_client(struct mg_connection *c)
     int n = 0, nnn = 0;
 
     // Set meta data
-    n = sprintf(data_buffer, "Tf %u;b %u;s %d", sensor_get_freq(), sensor_get_sample_rate(), spectrum_gain);
+    n = sprintf(data_buffer, "Tf %u;b %u;s %lf", sensor_get_freq(), sensor_get_sample_rate(), sensor_get_gain());
 
     DEBUG("ws_update_client %s\n", data_buffer);
 

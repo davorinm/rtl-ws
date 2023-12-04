@@ -11,6 +11,12 @@ typedef struct
     uint8_t im;
 } cmplx_u8;
 
+typedef struct
+{
+    uint16_t re;
+    uint16_t im;
+} cmplx_u16;
+
 typedef union
 {
     int64_t bulk;

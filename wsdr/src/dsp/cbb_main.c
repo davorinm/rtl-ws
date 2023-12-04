@@ -85,8 +85,14 @@ void cbb_init()
     spect = spectrum_alloc(FFT_POINTS);
 
     sensor_start();
+
+    // Logger
     signal_source_add_callback(log_data_rate);
+    
+    // Audio
     signal_source_add_callback(decimate);
+
+    // FFT
     signal_source_add_callback(estimate_spectrum);
 }
 
@@ -100,7 +106,7 @@ int cbb_new_spectrum_available()
     return new_spectrum_available;
 }
 
-int cbb_get_spectrum_payload(char *buf, int buf_len, int spectrum_gain_db)
+int cbb_get_spectrum_payload(char *buf, int buf_len, double spectrum_gain_db)
 {
     UNUSED(buf_len);
 
