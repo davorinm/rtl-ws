@@ -6,7 +6,7 @@
 
 #include "cbb_main.h"
 #include "rf_decimator.h"
-#include "../spectrum.h"
+#include "spectrum.h"
 #include "../signal/sensor.h"
 #include "../tools/rate_logger.h"
 #include "../tools/helpers.h"
