@@ -6,17 +6,15 @@
 
 #include "tools/helpers.h"
 #include "web/web_handler.h"
-#include "dsp/rf_decimator.h"
-#include "audio_main.h"
-#include "dsp/cbb_main.h"
-
+#include "sensor/sensor.h"
 #include "tools/timer.h"
+#include "spectrum.h"
 
 static volatile int force_exit = 0;
 
 static void sighandler(int sig)
 {
-    UNUSED(sig);
+    DEBUG("sighandler %d\n", sig);
 
     force_exit = 1;
 }
@@ -33,14 +31,15 @@ int main(int argc, char **argv)
 
     // Signal for Ctrl+C
     signal(SIGINT, sighandler);
+    signal(SIGQUIT, sighandler);
+    signal(SIGTERM, sighandler);
 
-    INFO("Initializing audio processing...\n");
-    audio_init();
+    INFO("Initializing spectrum\n");
+    spectrum_init();
 
-    INFO("Initializing complex baseband processing...\n");
-    cbb_init();
 
-    rf_decimator_add_callback(cbb_rf_decimator(), audio_fm_demodulator);
+    INFO("Initializing sensor\n"); 
+    sensor_init();
 
     INFO("Initializing web service...\n");
     web_init();
@@ -54,11 +53,11 @@ int main(int argc, char **argv)
     INFO("Closing web context\n");
     web_close();
 
-    INFO("Closing complex baseband processing...\n");
-    cbb_close();
+    INFO("Closing sensor\n");
+    sensor_close();
 
-    INFO("Closing audio processing...\n");
-    audio_close();
+    INFO("Closing spectrum\n");
+    spectrum_close();
 
     return 0;
 }

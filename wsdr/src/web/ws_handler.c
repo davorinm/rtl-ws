@@ -2,9 +2,8 @@
 #include <stdio.h>
 
 #include "ws_handler.h"
-#include "../dsp/cbb_main.h"
-#include "../signal/sensor.h"
-#include "../audio_main.h"
+#include "../sensor/sensor.h"
+#include "../spectrum.h"
 #include "../tools/helpers.h"
 #include "../settings.h"
 
@@ -45,7 +44,6 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
         bw = atoi(&in_buffer[strlen(SAMPLE_RATE_CMD)]) * 1000;
         INFO("Trying to set sample rate to %d Hz...\n", bw);
         sensor_set_sample_rate(bw);
-        rf_decimator_set_parameters(cbb_rf_decimator(), sensor_get_sample_rate(), sensor_get_sample_rate() / DECIMATED_TARGET_BW_HZ);
     }
     else if (mg_strstr(command, mg_str(SPECTRUM_GAIN_CMD)))
     {
@@ -57,15 +55,16 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
     {
         pss->send_data = 1;
         INFO("START\n");
+        sensor_start();
     }
     else if (mg_strcmp(command, mg_str(STOP_CMD)) == 0)
     {
         pss->send_data = 0;
         INFO("STOP\n");
+        sensor_stop();
     }
     else if (mg_strcmp(command, mg_str(START_AUDIO_CMD)) == 0)
     {
-        audio_reset();
         pss->audio_data = 1;
         INFO("Audio enabled\n");
     }
@@ -93,7 +92,7 @@ static void ws_update_spectrum(struct mg_connection *c)
     n = sprintf(spectrum_buffer, "S");
 
     // Write spectrum
-    nn = cbb_get_spectrum_payload(spectrum_buffer + n, SEND_BUFFER_SIZE - n, sensor_get_gain());
+    nn = spectrum_payload(spectrum_buffer + n, SEND_BUFFER_SIZE - n, 0);
 
     // Send data
     nnn = mg_ws_send(c, spectrum_buffer, n + nn, WEBSOCKET_OP_BINARY);
@@ -105,28 +104,7 @@ static void ws_update_spectrum(struct mg_connection *c)
 
 static void ws_update_audio(struct mg_connection *c)
 {
-    int n = 0, nn = 0, nnn = 0;
-
-    // Set meta data
-    n = sprintf(audio_buffer, "A   ");
-
-    // Write audio
-    nn = audio_get_audio_payload(audio_buffer + n, SEND_BUFFER_SIZE - n);
-
-    // Check length
-    if (n + nn <= 0)
-    {
-        return;
-    }
-
-    // Send data
-    nnn = mg_ws_send(c, audio_buffer, n + nn, WEBSOCKET_OP_BINARY);
-    if (nnn < 0)
-    {
-        ERROR("Writing failed, error code == %d\n", nnn);
-    }
-
-    INFO("Audio header size %d, audio size %d, audio buffer size %d, socet size %d\n", n, nn, n + nn, nnn);
+    
 }
 
 static void ws_update_client(struct mg_connection *c)
@@ -153,16 +131,12 @@ void ws_handler_data(struct mg_connection *c, struct per_session_data__rtl_ws *p
         pss->update_client = 0;
         ws_update_client(c);
     }
-    else if (pss->send_data)
+    
+    if (pss->send_data)
     {
-        if (cbb_new_spectrum_available())
+        if (spectrum_available())
         {
             ws_update_spectrum(c);
-        }
-
-        if (pss->audio_data == 1 && audio_new_audio_available())
-        {
-            ws_update_audio(c);
         }
     }
 }

@@ -10,6 +10,9 @@
 // HTML resources
 #define HTML_PATH "./resources"
 
+// Pluto
+#define PLUTO_SAMPLES_PER_READ 1024 * 1024
+
 // Bandwidth
 #define DECIMATED_TARGET_BW_HZ  (44100 * 4)
 

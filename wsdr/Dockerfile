@@ -9,12 +9,8 @@ FROM ubuntu:22.04
 
 RUN apt update && \
 	apt upgrade -y && \
-	apt install -y wget && \
-	apt install -y build-essential cmake
+	apt install -y cmake
 
-WORKDIR /usr/local/bin
-RUN wget http://releases.linaro.org/components/toolchain/binaries/7.2-2017.11/arm-linux-gnueabihf/gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz
-RUN tar -xf gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz
-ENV PATH=$PATH:/usr/local/bin/gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf/bin
+ENV PATH=$PATH:/project/files/gcc-linaro-7.3.1-2018.05-x86_64_arm-linux-gnueabihf/bin
 
 WORKDIR /project

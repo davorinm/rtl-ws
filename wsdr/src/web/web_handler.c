@@ -7,8 +7,9 @@
 #include "../tools/helpers.h"
 #include "../mongoose/mongoose.h"
 
-static const char *s_listen_on = "localhost:8000";
-static const char *s_web_root = "./resources";
+static const char *s_listen_on = "0.0.0.0:8000";
+#define WEB_ROOT "resources";
+#define WEB_ROOT_EMB "/resources";
 
 // Mongoose event manager
 struct mg_mgr mgr;
@@ -38,7 +39,17 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
         else
         {
             // Serve static files
-            struct mg_http_serve_opts opts = {.root_dir = s_web_root};
+            struct mg_http_serve_opts opts;
+            memset(&opts, 0, sizeof(opts));
+
+#if MG_ENABLE_PACKED_FS
+            // On embedded, use packed files
+            opts.root_dir = WEB_ROOT_EMB;
+            opts.fs = &mg_fs_packed;
+#else
+            // On workstations, use filesystem
+            opts.root_dir = WEB_ROOT;
+#endif
             mg_http_serve_dir(c, ev_data, &opts);
         }
     }
@@ -124,8 +135,8 @@ void web_init()
     ws_init();
 
     // Mongoose init
-    mg_mgr_init(&mgr); // Initialise event manager
-    mg_log_set(MG_LL_DEBUG);  // Set log level
+    mg_mgr_init(&mgr);       // Initialise event manager
+    mg_log_set(MG_LL_DEBUG); // Set log level
 
     printf("Starting WS listener on %s/websocket\n", s_listen_on);
 
@@ -138,8 +149,6 @@ void web_init()
     {
         printf("An error occured: %d", err);
     }
-
-
 }
 
 void web_poll()
