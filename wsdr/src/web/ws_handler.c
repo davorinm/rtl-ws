@@ -3,11 +3,11 @@
 
 #include "ws_handler.h"
 #include "../sensor/sensor.h"
-#include "../spectrum.h"
+#include "../dsp/spectrum.h"
 #include "../tools/helpers.h"
 #include "../settings.h"
 
-#define SEND_BUFFER_SIZE 1024 * 32
+#define SEND_BUFFER_SIZE 1024 * 64
 
 #define FREQ_CMD "freq"
 #define SAMPLE_RATE_CMD "bw"
@@ -16,6 +16,7 @@
 #define STOP_CMD "stop"
 #define START_AUDIO_CMD "start_audio"
 #define STOP_AUDIO_CMD "stop_audio"
+#define KILL_CMD "kill"
 
 static char *spectrum_buffer = NULL;
 static char *audio_buffer = NULL;
@@ -73,6 +74,11 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
         pss->audio_data = 0;
         INFO("Audio disabled\n");
     }
+    else if (mg_strcmp(command, mg_str(KILL_CMD)) == 0)
+    {
+        INFO("Killing process..\n");
+        raise(SIGINT);
+    }
     else
     {
         INFO("Unknown command!!!!\n");
@@ -92,7 +98,7 @@ static void ws_update_spectrum(struct mg_connection *c)
     n = sprintf(spectrum_buffer, "S");
 
     // Write spectrum
-    nn = spectrum_payload(spectrum_buffer + n, SEND_BUFFER_SIZE - n, 0);
+    nn = spectrum_payload(spectrum_buffer + n, SEND_BUFFER_SIZE - n);
 
     // Send data
     nnn = mg_ws_send(c, spectrum_buffer, n + nn, WEBSOCKET_OP_BINARY);
@@ -100,11 +106,8 @@ static void ws_update_spectrum(struct mg_connection *c)
     {
         ERROR("Writing failed, error code == %d\n", nnn);
     }
-}
-
-static void ws_update_audio(struct mg_connection *c)
-{
-    
+        
+    // DEBUG("spectrum bytes_written: %i, %i, %i \n", n, nn, nnn);
 }
 
 static void ws_update_client(struct mg_connection *c)
@@ -112,7 +115,7 @@ static void ws_update_client(struct mg_connection *c)
     int n = 0, nnn = 0;
 
     // Set meta data
-    n = sprintf(data_buffer, "Tf %u;b %u;s %lf", sensor_get_freq(), sensor_get_sample_rate(), sensor_get_gain());
+    n = sprintf(data_buffer, "Tf %u;b %u;s %lf;y %u", sensor_get_freq(), sensor_get_sample_rate(), sensor_get_gain(), PLUTO_SAMPLES_PER_READ);
 
     DEBUG("ws_update_client %s\n", data_buffer);
 

@@ -6,7 +6,7 @@
 #include <complex.h>
 #include <fftw3.h>
 
-#include "settings.h"
+#include "../settings.h"
 
 // FFT
 double *window;
@@ -50,14 +50,20 @@ fftw_complex *spectrum_data_input()
 
 void spectrum_process()
 {
+    unsigned int i = 0;
+    unsigned int buffer_size_squared = buffer_size * buffer_size;
+    
     fftw_execute(plan_forward);
-
-    int i;
 
     for (i = 0; i < buffer_size; i++)
     {
-        power_spectrum[i] = sqrt(creal(output[i]) * creal(output[i]) + cimag(output[i]) * cimag(output[i]));
+        power_spectrum[i] = 10 * log10((creal(output[i]) * creal(output[i]) + cimag(output[i]) * cimag(output[i])) / buffer_size_squared);
     }
+
+    // for (i = 0; i < 200; i++)
+    // {
+    //     printf("POW %f \n", power_spectrum[i]);
+    // }
 
     new_spectrum_available = 1;
 }
@@ -67,28 +73,28 @@ int spectrum_available()
     return new_spectrum_available;
 }
 
-int spectrum_payload(char *buf, int buf_len, double sw_spectrum_gain_db)
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+
+int spectrum_payload(char *buf, unsigned int buf_len)
 {
-    int spectrum_averaging_count = 0;
-    int idx = 0;
-    int len = 0;
-    //double linear_energy_gain = pow(10, sw_spectrum_gain_db / 10);
+    unsigned int count = 0;
 
-    for (idx = 0; idx < buffer_size; idx++)
-    {
-        if (idx >= buf_len) {
-            break;
+    for (count = 0; count < MIN(buf_len, buffer_size); count++)
+    {   
+        double val = power_spectrum[count];
+        if (val > 120) {
+            val = 120;
         }
-
-        int m = 10 * log10(fabs(power_spectrum[idx]));
-        m = m >= 0 ? m : 0;
-        m = m <= 255 ? m : 255;
-        buf[len++] = (char)m;
+        if (val < -120) {
+            val = -120;
+        }
+        buf[count] = (int8_t)val;
     }
 
     new_spectrum_available = 0;
 
-    return len;
+    return count;
 }
 
 void spectrum_close()

@@ -32,7 +32,7 @@
         <div id="left" class="grid-item">
             <div id="connection">
                 <div width="250">
-                    <img id="ws_status" src="connect2_help.png" />
+                    <button id="connection" onclick="connect()"><img id="ws_status" src="connect2_help.png" /></button>
                 </div>
             </div>
             <div id="controls">
@@ -80,6 +80,11 @@
                     <input type="number" name="min" value="300">
                     <label for="max">Max</label>
                     <input type="number" name="max" value="700">
+                </div>
+            </div>
+            <div id="debug">
+                <div>
+                    <input type="submit" onclick="kill();" value="Kill" />
                 </div>
             </div>
         </div>

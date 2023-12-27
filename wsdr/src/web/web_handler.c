@@ -95,7 +95,7 @@ static void *timer_fn(void *arg)
 {
     while (!force_exit)
     {
-        usleep(50000);
+        usleep(100000);
 
         // INFO("W\n");
         struct mg_mgr *mgr = (struct mg_mgr *)arg;

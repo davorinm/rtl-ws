@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <iio.h>
 
-#include "sensor_helpers.h"
+#include "sensor_pluto_helpers.h"
 #include "../tools/helpers.h"
 
 /* static scratch mem for strings */
@@ -70,11 +70,29 @@ static bool get_phy_chan(struct iio_context *ctx, enum iodev d, int chid, struct
 static void wr_ch_lli(struct iio_channel *chn, const char *attribute, long long value)
 {
     int ret;
+    long long cValue;
+
+    ret = iio_channel_attr_read_longlong(chn, attribute, &cValue);
+    if (ret < 0)
+    {
+        DEBUG("Error %d reading longlong value to channel \"%s\"\n\"%lli\"\nvalue may not be supported.\n", ret, attribute, value);
+        return;
+    }
+
+    // if (value == cValue)
+    // {
+    //     DEBUG("Reading longlong value from channel \"%s\" value \"%lli\" is equal to \"%lli\"\n", attribute, cValue, value);
+    //     return;
+    // }
+
     ret = iio_channel_attr_write_longlong(chn, attribute, value);
     if (ret < 0)
     {
-        DEBUG("Error %d writing number to channel \"%s\"\n\"%lli\"\nvalue may not be supported.\n", ret, attribute, value);
+        DEBUG("Error %d longlong value number to channel \"%s\"\n\"%lli\"\nvalue may not be supported.\n", ret, attribute, value);
+        return;
     }
+
+    DEBUG("Sucess writing longlong value to channel \"%s\" \"%lli\"\n", attribute, value);
 }
 
 /* write attribute: string */
@@ -89,11 +107,11 @@ static void wr_ch_str(struct iio_channel *chn, const char *attribute, const char
         return;
     }
 
-    if (strcmp(value, buf) == 0)
-    {
-        DEBUG("Reading string from channel \"%s\" value \"%s\" is equal to \"%s\"\n", attribute, strdup(buf), value);
-        return;
-    }
+    // if (strcmp(value, buf) == 0)
+    // {
+    //     DEBUG("Reading string from channel \"%s\" value \"%s\" is equal to \"%s\"\n", attribute, strdup(buf), value);
+    //     return;
+    // }
 
     ret = iio_channel_attr_write(chn, attribute, value);
     if (ret < 0)
@@ -101,17 +119,11 @@ static void wr_ch_str(struct iio_channel *chn, const char *attribute, const char
         DEBUG("Error %d writing string to channel \"%s\"\n\"%s\"\nvalue may not be supported.\n", ret, attribute, value);
         return;
     }
+    
+    DEBUG("Sucess writing string to channel \"%s\" \"%s\"\n", attribute, value);
 }
 
 // ======
-
-void write_to_led(const char *buff)
-{
-    FILE *fd;
-    fd = fopen("/sys/class/leds/led0:green/trigger", "w");
-    fprintf(fd, buff);
-    fclose(fd);
-}
 
 /* finds AD9361 streaming IIO devices */
 bool get_ad9361_stream_dev(struct iio_context *ctx, enum iodev d, struct iio_device **dev)
@@ -130,6 +142,16 @@ bool get_ad9361_stream_dev(struct iio_context *ctx, enum iodev d, struct iio_dev
     }
 }
 
+static int save_to_ini_chn_cb(struct iio_channel *chn, const char *attr, const char *val, size_t len, void *d)
+{
+    UNUSED(chn);
+    UNUSED(len);
+    UNUSED(d);
+
+    DEBUG("Reading: \"%s\" value \"%s\" \n", attr, val);
+    return 0;
+}
+
 /* applies streaming configuration through IIO */
 bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, enum iodev type, int chid)
 {
@@ -139,21 +161,34 @@ bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, en
     printf("* Acquiring AD9361 phy channel %d\n", chid);
     if (!get_phy_chan(ctx, type, chid, &chn))
     {
+        printf("* ERROR Acquiring AD9361 phy channel %d\n", chid);
         return false;
     }
+
+    iio_channel_attr_read_all(chn, save_to_ini_chn_cb, NULL);
+
     wr_ch_str(chn, "rf_port_select", cfg->rfport);
     wr_ch_lli(chn, "rf_bandwidth", cfg->bw_hz);
     wr_ch_lli(chn, "sampling_frequency", cfg->fs_hz);
-    wr_ch_str(chn, "gain_control_mode", cfg->agc_mode ? "auto" : "manual");
-    wr_ch_lli(chn, "hardwaregain", cfg->gain);
+    // wr_ch_str(chn, "gain_control_mode", cfg->agc_mode);
+    // wr_ch_lli(chn, "hardwaregain", cfg->gain);
+
+    iio_channel_attr_read_all(chn, save_to_ini_chn_cb, NULL);
 
     // Configure LO channel
     printf("* Acquiring AD9361 %s lo channel\n", type == TX ? "TX" : "RX");
     if (!get_lo_chan(ctx, type, &chn))
     {
+        printf("* ERROR Acquiring AD9361 %s lo channel\n", type == TX ? "TX" : "RX");
         return false;
     }
+    
+    iio_channel_attr_read_all(chn, save_to_ini_chn_cb, NULL);
+    
     wr_ch_lli(chn, "frequency", cfg->lo_hz);
+
+    iio_channel_attr_read_all(chn, save_to_ini_chn_cb, NULL);
+
     return true;
 }
 

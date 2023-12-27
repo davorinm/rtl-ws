@@ -94,4 +94,4 @@ dockerClean:
 	
 uploadAndRun:
 	scp -O $(PROGRAM) root@192.168.1.50:/tmp && \
-	ssh root@192.168.1.50 /tmp/$(EXECUTABLE)
+	ssh -t root@192.168.1.50 /tmp/$(EXECUTABLE)

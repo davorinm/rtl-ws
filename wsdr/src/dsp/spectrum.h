@@ -12,7 +12,7 @@ void spectrum_process();
 
 int spectrum_available();
 
-int spectrum_payload(char *buf, int buf_len, double spectrum_gain_db);
+int spectrum_payload(char *buf, int buf_len);
 
 void spectrum_close();
 

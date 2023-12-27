@@ -6,12 +6,15 @@
 
 #include "timer.h"
 
+#define BILLION  1000000000.0
+
+
 static double work2()
 {
     double sum = 0;
     double add = 1;
 
-    int iterations = 100;
+    int iterations = 10000;
     for (int i = 0; i < iterations; i++)
     {
         sum += add;
@@ -35,8 +38,9 @@ void time_test_1(void)
 
     printf("Result: %f\n", sum);
 
-    double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
-    printf("Time1 measured: %f seconds.\n", elapsed);
+    double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC * 1000;
+    printf("Time1 measured: %f ms to execute \n", cpu_time_used);
+    printf("Time1 measured: %lu, %lu, %lu \n", end, start, CLOCKS_PER_SEC);
 }
 
 void time_test_2(void)
@@ -54,11 +58,10 @@ void time_test_2(void)
 
     long seconds = end.tv_sec - begin.tv_sec;
     long nanoseconds = end.tv_nsec - begin.tv_nsec;
-    double elapsed = seconds + nanoseconds;
 
     printf("Result: %f\n", sum);
 
-    printf("Time2 measured: %f seconds.\n", elapsed);
+    printf("Time2 measured: %lds %ldns \n", seconds, nanoseconds);
 }
 
 void time_test_3(void)
@@ -76,9 +79,20 @@ void time_test_3(void)
 
     long seconds = end.tv_sec - begin.tv_sec;
     long nanoseconds = end.tv_nsec - begin.tv_nsec;
-    double elapsed = seconds + nanoseconds;
 
     printf("Result: %f\n", sum);
 
-    printf("Time3 measured: %f \n", elapsed);
+    printf("Time3 measured: %lds %ldns \n", seconds, nanoseconds);
+}
+
+void timer_start(struct timespec *begin) {
+    clock_gettime(CLOCK_REALTIME, begin);
+}
+
+void timer_end(struct timespec *begin, double *time_spent) {
+    struct timespec end;
+    clock_gettime(CLOCK_REALTIME, &end);
+
+    // time_spent = end - start
+    *time_spent = (end.tv_sec - begin->tv_sec) + (end.tv_nsec - begin->tv_nsec) / BILLION;
 }

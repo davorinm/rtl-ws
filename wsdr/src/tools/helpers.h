@@ -3,9 +3,8 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <time.h>
 
-#define RTL_WS_LOG_PREFIX(out) fprintf(out, "%u ", (unsigned int) time(NULL)); fprintf(out, __FILE__); fprintf(out, ":"); fprintf(out, "%d", __LINE__);
+#define RTL_WS_LOG_PREFIX(out) fprintf(out, __FILE__); fprintf(out, ":"); fprintf(out, "%d", __LINE__);
 
 #ifdef RTL_WS_DEBUG
 #define DEBUG(...) RTL_WS_LOG_PREFIX(stdout); fprintf(stdout, " [D] "); fprintf(stdout, __VA_ARGS__); fflush(stdout);

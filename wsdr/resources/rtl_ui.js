@@ -3,13 +3,8 @@ let started = false;
 let down = 0;
 let no_last = 1;
 let last_x = 0, last_y = 0;
-let spectrumCtx;
-let spectrumGridCtx;
-let bandCtx;
-let waterfallCtx;
 let socket_lm;
 let color = "#000000";
-let y_offset = 256;
 let spectrogram_offset = 315;
 let frequency = 100000;
 let spectrumgain = 0;
@@ -20,27 +15,42 @@ let real_bandwidth = 2048;
 let conn_counter = 0;
 let conn_inc = -1;
 let waterafallData = new Array();
-for (var idx = 0; idx < 200; idx++) {
-    waterafallData[idx] = new Array();
-    for (var idx2; idx2 < 1024; idx2++) {
-        waterafallData[idx][idx2] = 0;
-    }
-}
-let waterafallDataIndex = -1;
-let waterfallImage;
 let sound_on = false;
 let samplesProcessorNode;
 let audioContext;
 
+let spectrumCanvas;
+let spectrumCtx;
+
+let spectrumGridCanvas;
+let spectrumGridCtx;
+
+let bandCanvas;
+let bandCtx;
+
+let waterfallCanvas;
+let waterfallCtx;
+
+let offScreenWaterfallCanvas;
+let offScreenWaterfallCtx;
+
 window.onload = function (event) {
     initialize();
+    drawGrid();
+    drawSpectrum();
+    drawWaterfall();
+
+    connect();
 };
 
 window.onresize = function (event) {
-
+    initialize();
+    drawGrid();
+    drawSpectrum();
+    drawWaterfall();
 };
 
-function initialize() {
+function connect() {
     let url = get_appropriate_ws_url() + "/websocket"
     try {
         socket_lm = new WebSocket(url);
@@ -54,15 +64,20 @@ function initialize() {
         socket_lm.onmessage = function got_packet(msg) {
             // binary frame
             const view = new DataView(msg.data);
-            var firstChar = String.fromCharCode(view.getUint8(0));
+            let firstChar = String.fromCharCode(view.getUint8(0));
 
             if (firstChar == 'S') {
-                // Spectrum
-                const bytearray = new Uint8Array(msg.data, 1);
+                // Spectrum data
+                let spectrumData = new Int8Array(msg.data, 1);
+    
+                if (waterafallData.length > 350) {
+                    waterafallData.pop()
+                }
 
-                updateSpectrum(bytearray);
+                waterafallData.unshift(spectrumData);
 
-                updateWaterfall(bytearray);
+                drawSpectrum();
+                drawWaterfall();
             }
             else if (firstChar == 'A') {
                 // Audio
@@ -107,6 +122,8 @@ function initialize() {
                             spectrumgain_element.style.color = "black";
                             real_spectrumgain = parseInt(spectrumgain);
                         }
+                    } else if (i[0] == 'y') {
+                        console.log("number of samples", i[1]);
                     }
                 }
 
@@ -126,43 +143,53 @@ function initialize() {
     } catch (e) {
         console.error('Sorry, the web socket at "%s" is un-available', url);
     }
+}
+
+function initialize() {
+    const dpr = window.devicePixelRatio;
 
     // Spectrum
-    var spectrumCanvas = document.getElementById('spectrumCanvas');
+    spectrumCanvas = document.getElementById('spectrumCanvas');
     spectrumCtx = spectrumCanvas.getContext("2d");
-    spectrumCtx.canvas.width = spectrumCanvas.clientWidth;
-    spectrumCtx.canvas.height = spectrumCanvas.clientHeight;
 
-    console.log("spectrumCtx", spectrumCtx.canvas.clientWidth, spectrumCtx.canvas.clientHeight);
+    const spectrumCanvasRect = spectrumCanvas.getBoundingClientRect();
+
+    spectrumCanvas.width = spectrumCanvasRect.width * dpr;
+    spectrumCanvas.height = spectrumCanvasRect.height * dpr;
+
+    spectrumCtx.scale(dpr, dpr);
+
+    spectrumCanvas.style.width = `${spectrumCanvasRect.width}px`;
+    spectrumCanvas.style.height = `${spectrumCanvasRect.height}px`;
 
     // Spectrum grid
-    var spectrumGridCanvas = document.getElementById('spectrumGridCanvas');
+    spectrumGridCanvas = document.getElementById('spectrumGridCanvas');
     spectrumGridCtx = spectrumGridCanvas.getContext("2d");
-    spectrumGridCtx.canvas.width = spectrumGridCanvas.clientWidth;
-    spectrumGridCtx.canvas.height = spectrumGridCanvas.clientHeight;
 
     // Band
-    var bandCanvas = document.getElementById('bandCanvas');
+    bandCanvas = document.getElementById('bandCanvas');
     bandCtx = bandCanvas.getContext("2d");
-    bandCtx.canvas.width = bandCanvas.clientWidth;
-    bandCtx.canvas.height = bandCanvas.clientHeight;
-
-    console.log("bandCtx", bandCtx.canvas.clientWidth, bandCtx.canvas.clientHeight);
 
     // Waterfall
-    var waterfallCanvas = document.getElementById('waterfallCanvas');
+    waterfallCanvas = document.getElementById('waterfallCanvas');
     waterfallCtx = waterfallCanvas.getContext("2d");
-    waterfallCtx.canvas.width = waterfallCanvas.clientWidth;
-    waterfallCtx.canvas.height = waterfallCanvas.clientHeight;
-    waterfallImage = waterfallCtx.createImageData(1024, 315);
 
-    console.log("waterfallCtx", waterfallCtx.canvas.clientWidth, waterfallCtx.canvas.clientHeight);
+    const waterfallCanvasRect = waterfallCanvas.getBoundingClientRect();
+
+    waterfallCanvas.width = waterfallCanvasRect.width * dpr;
+    waterfallCanvas.height = waterfallCanvasRect.height * dpr;
+
+    waterfallCtx.scale(dpr, dpr);
+
+    waterfallCanvas.style.width = `${waterfallCanvasRect.width}px`;
+    waterfallCanvas.style.height = `${waterfallCanvasRect.height}px`;
+
+    // OffScreen
+    offScreenWaterfallCanvas = document.createElement("canvas");
+    offScreenWaterfallCtx = offScreenWaterfallCanvas.getContext("2d");
 
     // other
     document.getElementById("toggle_sound").disabled = true;
-
-
-    drawGrid();
 }
 
 function get_appropriate_ws_url() {
@@ -183,22 +210,33 @@ function get_appropriate_ws_url() {
     return pcol + u[0];
 }
 
-function updateSpectrum(bytearray) {
-    const spectrumCtxWidth = spectrumCtx.canvas.clientWidth;
-    const spectrumCtxHeight = spectrumCtx.canvas.clientHeight;
+function drawSpectrum() {
+    const spectrumCtxWidth = spectrumCanvas.clientWidth;
+    const spectrumCtxHeight = spectrumCanvas.clientHeight;
+
+    if (waterafallData.length <= 0) {
+        return;
+    }
+
+    const dataCount = waterafallData[0].length;
+
+    var maxValue = Math.max.apply(Math, waterafallData[0]);
+    var minValue = Math.min.apply(Math, waterafallData[0]);
 
     spectrumCtx.clearRect(0, 0, spectrumCtxWidth, spectrumCtxHeight);
     spectrumCtx.beginPath();
     spectrumCtx.strokeStyle = "#ff000";
-    spectrumCtx.lineWidth = 2;
+    spectrumCtx.lineWidth = 1;
 
-    for (var idx = 0; idx < bytearray.length; idx++) {
-        const value = bytearray[idx];
-        const yPos = -value * 4 + y_offset;
+    let spectrumCtxPosHorizontal = 0
+    for (var idx = 0; idx < dataCount; idx++) {
+        const value = waterafallData[0][idx];
+        const yPos = -value + 100;
         if (idx == 0) {
             spectrumCtx.moveTo(0, yPos);
         }
-        spectrumCtx.lineTo(idx, yPos);
+        spectrumCtx.lineTo(spectrumCtxPosHorizontal, yPos);
+        spectrumCtxPosHorizontal += 1
     }
 
     spectrumCtx.stroke();
@@ -206,11 +244,13 @@ function updateSpectrum(bytearray) {
 }
 
 function drawGrid() {
-    const bw = spectrumGridCtx.canvas.clientWidth;
-    const bh = spectrumGridCtx.canvas.clientHeight;
+    const bw = spectrumGridCanvas.clientWidth;
+    const bh = spectrumGridCanvas.clientHeight;
 
     // Padding
     const p = 0;
+
+    spectrumGridCtx.clearRect(0, 0, bw, bh);
 
     // Horizontal lines
     for (var x = 40; x <= bw; x += 40) {
@@ -263,62 +303,29 @@ function upateFrequencyBands() {
 function colorFromAmplitude(ampl) {
     let r, g, b;
 
-    var tmp = ampl / 255.0;  // 0.0~1.0
-    if (tmp < 0.50) {
-        r = 0.0;
-    } else if (tmp > 0.75) {
-        r = 1.0;
-    } else {
-        r = 4.0 * tmp - 2.0;
-    }
-
-    if (tmp < 0.25) {
-        g = 4.0 * tmp;
-    } else if (tmp > 0.75) {
-        g = -4.0 * tmp + 4.0;
-    } else {
-        g = 1.0;
-    }
-
-    if (tmp < 0.25) {
-        b = 1.0;
-    } else if (tmp > 0.50) {
-        b = 0.0;
-    } else {
-        b = -4.0 * tmp + 2.0;
-    }
-
-    r *= 255;
-    g *= 255;
-    b *= 255;
+    var tmp = (ampl + 127);
+    
+    r = tmp;
+    g = tmp;
+    b = tmp;
 
     return [r, g, b];
 }
 
-function updateWaterfall(bytearray) {
-    // Fill data
-    waterafallDataIndex++;
-    if (waterafallDataIndex >= waterafallData.length) {
-        waterafallDataIndex = 0;
+function drawWaterfall() {
+    if (waterafallData.length <= 0) {
+        return;
     }
-
-    for (var idx = 0; idx < bytearray.length; idx++) {
-        const value = bytearray[idx];
-        waterafallData[waterafallDataIndex][idx - 1] = value;
-    }
+    
+    const imageWidth = waterafallData[0].length;
+    const imageHeight = waterafallData.length;
+    let waterfallImage = new ImageData(imageWidth, imageHeight);
 
     // Draw waterfall
+    let idx = 0;
     for (var y = 0; y < waterafallData.length; y++) {
-        var s_y = waterafallDataIndex + y;
-        s_y = ((s_y >= waterafallData.length) ? (s_y - waterafallData.length) : s_y);
-        for (var x = 0; x < 1024; x++) {
-            var idx = (((waterafallData.length - 1) - y) * 1024 * 4) + x * 4;
-            var ampl = 0;
-            try {
-                ampl = waterafallData[s_y][x];
-            } catch (exception) {
-                ampl = 0;
-            }
+        for (var x = 0; x < waterafallData[y].length; x++) {
+            var ampl = waterafallData[y][x];
 
             let color = colorFromAmplitude(ampl);
 
@@ -326,11 +333,27 @@ function updateWaterfall(bytearray) {
             waterfallImage.data[idx + 1] = color[1];
             waterfallImage.data[idx + 2] = color[2];
             waterfallImage.data[idx + 3] = 255;
+            idx += 4;
         }
     }
-
+          
     waterfallCtx.putImageData(waterfallImage, 0, 0);
 }
+
+async function resizeImageData (imageData, width, height) {
+    const resizeWidth = width >> 0
+    const resizeHeight = height >> 0
+    const ibm = await window.createImageBitmap(imageData, 0, 0, imageData.width, imageData.height, {
+      resizeWidth, resizeHeight
+    })
+    const canvas = document.createElement('canvas')
+    canvas.width = resizeWidth
+    canvas.height = resizeHeight
+    const ctx = canvas.getContext('2d')
+    ctx.scale(resizeWidth / imageData.width, resizeHeight / imageData.height)
+    ctx.drawImage(ibm, 0, 0)
+    return ctx.getImageData(0, 0, resizeWidth, resizeHeight)
+  }
 
 function frequency_change() {
     frequency = document.getElementById("frequency").value;
@@ -362,6 +385,10 @@ function start_or_stop() {
 
     // Toggle Audio button
     document.getElementById("toggle_sound").disabled = !started;
+}
+
+function kill() {
+    socket_lm.send("kill");
 }
 
 async function initialize_sound() {

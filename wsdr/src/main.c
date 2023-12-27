@@ -8,7 +8,7 @@
 #include "web/web_handler.h"
 #include "sensor/sensor.h"
 #include "tools/timer.h"
-#include "spectrum.h"
+#include "dsp/spectrum.h"
 
 static volatile int force_exit = 0;
 
@@ -37,8 +37,9 @@ int main(int argc, char **argv)
     INFO("Initializing spectrum\n");
     spectrum_init();
 
+    // TODO: Make callback chaining for samples processing
 
-    INFO("Initializing sensor\n"); 
+    INFO("Initializing sensor\n");
     sensor_init();
 
     INFO("Initializing web service...\n");

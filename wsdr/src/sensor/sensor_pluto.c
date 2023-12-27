@@ -4,16 +4,20 @@
 #include <pthread.h>
 
 #include <iio.h>
-#include <stdio.h>
+
 #include <math.h>
 #include <complex.h>
 #include <fftw3.h>
 
+#include <time.h> 
+#include <sys/time.h>
+
 #include "sensor.h"
-#include "sensor_helpers.h"
+#include "sensor_pluto_helpers.h"
 #include "../tools/helpers.h"
+#include "../tools/timer.h"
 #include "../settings.h"
-#include "../spectrum.h"
+#include "../dsp/spectrum.h"
 
 /* IIO structs required for streaming */
 static struct iio_context *ctx = NULL;
@@ -33,8 +37,6 @@ static bool running = false;
 
 static int sensor_loop(fftw_complex *in_c)
 {
-    DEBUG("########## Loop ###########\n");
-
     ssize_t nbytes_rx;
     char *p_dat, *p_end;
     ptrdiff_t p_inc;
@@ -48,7 +50,7 @@ static int sensor_loop(fftw_complex *in_c)
         return -1;
     }
 
-    DEBUG("Refilling buf with %d bytes\n", (int)nbytes_rx);
+    // DEBUG("Refilling buf with %d bytes\n", (int)nbytes_rx);
 
     // READ: Get pointers to RX buf and read IQ from RX buf port 0
     p_inc = iio_buffer_step(rxbuf);
@@ -69,11 +71,16 @@ static void *worker(void *user)
 {
     UNUSED(user);
 
+    // struct timespec time;
+    // double time_spent;
+
     int status = 0;
     DEBUG("Reading signal from sensor\n");
 
     while (running)
     {
+        // timer_start(&time);
+
         /// Pointer to fft data
         fftw_complex *in_c = spectrum_data_input();
 
@@ -83,7 +90,14 @@ static void *worker(void *user)
             ERROR("Read failed with status %d\n", status);
         }
 
+        // timer_end(&time, &time_spent);
+        // DEBUG("Time elpased gathering is %f seconds\n", time_spent);
+
+        // timer_start(&time);
         spectrum_process();
+
+        // timer_end(&time, &time_spent);
+        // DEBUG("Time elpased processing is %f seconds\n", time_spent);
     }
 
     DEBUG("Done reading signal from sensor\n");
@@ -100,12 +114,13 @@ int sensor_init()
     int ret;
 
     // RX stream config
-    rxcfg.bw_hz = MHZ(2);   // 2 MHz rf bandwidth
-    rxcfg.fs_hz = MHZ(2.5); // 2.5 MS/s rx sample rate
-    rxcfg.lo_hz = MHZ(102.8); // 2.5 GHz rf frequency
-    rxcfg.agc_mode = "slow_attack";
-    rxcfg.gain = 0;              // 0 dB gain
+	rxcfg.bw_hz = MHZ(2);   // 2 MHz rf bandwidth
+	rxcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s rx sample rate
+	rxcfg.lo_hz = MHZ(438); // 2.5 GHz rf frequency
+    rxcfg.agc_mode = "slow_attack"; // "manual fast_attack slow_attack hybrid" 
+    rxcfg.gain = 60;              // 0 dB gain
     rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
+    // "A_BALANCED B_BALANCED C_BALANCED A_N A_P B_N B_P C_N C_P TX_MONITOR1 TX_MONITOR2 TX_MONITOR1_2" 
 
     DEBUG("* Acquiring IIO context\n");
     ctx = iio_create_default_context();
@@ -124,6 +139,7 @@ int sensor_init()
         sensor_close();
         return -12;
     }
+    DEBUG("Found %i devices\n", ret);
 
     DEBUG("* Acquiring AD9361 streaming devices\n");
     ret = get_ad9361_stream_dev(ctx, RX, &rx);
@@ -163,7 +179,7 @@ int sensor_init()
     iio_channel_enable(rx0_i);
     iio_channel_enable(rx0_q);
 
-    DEBUG("* Creating non-cyclic IIO buffers with 1 MiS\n");
+    DEBUG("* Creating non-cyclic IIO buffers\n");
     rxbuf = iio_device_create_buffer(rx, buffer_size, false);
     if (rxbuf == NULL)
     {
@@ -171,9 +187,6 @@ int sensor_init()
         sensor_close();
         return -7;
     }
-
-    // first turn off led
-    write_to_led("none");
 
     return 0;
 }
@@ -254,6 +267,7 @@ void sensor_start()
 
 void sensor_stop() {
     DEBUG("* Stopping worker_thread\n");
+
     running = false;
     pthread_join(worker_thread, NULL);
 }
