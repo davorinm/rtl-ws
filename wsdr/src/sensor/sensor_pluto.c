@@ -114,9 +114,9 @@ int sensor_init()
     int ret;
 
     // RX stream config
-	rxcfg.bw_hz = MHZ(2);   // 2 MHz rf bandwidth
-	rxcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s rx sample rate
-	rxcfg.lo_hz = MHZ(438); // 2.5 GHz rf frequency
+	rxcfg.bw_hz = MHZ(10);   // 2 MHz rf bandwidth
+	rxcfg.fs_hz = MHZ(10);   // 2.5 MS/s rx sample rate
+	rxcfg.lo_hz = MHZ(430); // 2.5 GHz rf frequency
     rxcfg.agc_mode = "slow_attack"; // "manual fast_attack slow_attack hybrid" 
     rxcfg.gain = 60;              // 0 dB gain
     rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)

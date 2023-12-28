@@ -30,9 +30,7 @@ let bandCtx;
 
 let waterfallCanvas;
 let waterfallCtx;
-
-let offScreenWaterfallCanvas;
-let offScreenWaterfallCtx;
+let waterfallMaxData = 350;
 
 window.onload = function (event) {
     initialize();
@@ -69,12 +67,11 @@ function connect() {
             if (firstChar == 'S') {
                 // Spectrum data
                 let spectrumData = new Int8Array(msg.data, 1);
-    
-                if (waterafallData.length > 350) {
-                    waterafallData.pop()
-                }
-
                 waterafallData.unshift(spectrumData);
+    
+                if (waterafallData.length > waterfallMaxData) {
+                    waterafallData.length = waterfallMaxData;
+                }
 
                 drawSpectrum();
                 drawWaterfall();
@@ -152,16 +149,6 @@ function initialize() {
     spectrumCanvas = document.getElementById('spectrumCanvas');
     spectrumCtx = spectrumCanvas.getContext("2d");
 
-    const spectrumCanvasRect = spectrumCanvas.getBoundingClientRect();
-
-    spectrumCanvas.width = spectrumCanvasRect.width * dpr;
-    spectrumCanvas.height = spectrumCanvasRect.height * dpr;
-
-    spectrumCtx.scale(dpr, dpr);
-
-    spectrumCanvas.style.width = `${spectrumCanvasRect.width}px`;
-    spectrumCanvas.style.height = `${spectrumCanvasRect.height}px`;
-
     // Spectrum grid
     spectrumGridCanvas = document.getElementById('spectrumGridCanvas');
     spectrumGridCtx = spectrumGridCanvas.getContext("2d");
@@ -173,20 +160,6 @@ function initialize() {
     // Waterfall
     waterfallCanvas = document.getElementById('waterfallCanvas');
     waterfallCtx = waterfallCanvas.getContext("2d");
-
-    const waterfallCanvasRect = waterfallCanvas.getBoundingClientRect();
-
-    waterfallCanvas.width = waterfallCanvasRect.width * dpr;
-    waterfallCanvas.height = waterfallCanvasRect.height * dpr;
-
-    waterfallCtx.scale(dpr, dpr);
-
-    waterfallCanvas.style.width = `${waterfallCanvasRect.width}px`;
-    waterfallCanvas.style.height = `${waterfallCanvasRect.height}px`;
-
-    // OffScreen
-    offScreenWaterfallCanvas = document.createElement("canvas");
-    offScreenWaterfallCtx = offScreenWaterfallCanvas.getContext("2d");
 
     // other
     document.getElementById("toggle_sound").disabled = true;
@@ -220,8 +193,11 @@ function drawSpectrum() {
 
     const dataCount = waterafallData[0].length;
 
+    spectrumCanvas.width = dataCount;
+
     var maxValue = Math.max.apply(Math, waterafallData[0]);
     var minValue = Math.min.apply(Math, waterafallData[0]);
+    console.log("maxValue", maxValue, "minValue", minValue);
 
     spectrumCtx.clearRect(0, 0, spectrumCtxWidth, spectrumCtxHeight);
     spectrumCtx.beginPath();
@@ -231,12 +207,12 @@ function drawSpectrum() {
     let spectrumCtxPosHorizontal = 0
     for (var idx = 0; idx < dataCount; idx++) {
         const value = waterafallData[0][idx];
-        const yPos = -value + 100;
+        const yPos = -value;
         if (idx == 0) {
             spectrumCtx.moveTo(0, yPos);
         }
         spectrumCtx.lineTo(spectrumCtxPosHorizontal, yPos);
-        spectrumCtxPosHorizontal += 1
+        spectrumCtxPosHorizontal += 1;
     }
 
     spectrumCtx.stroke();
@@ -319,6 +295,12 @@ function drawWaterfall() {
     
     const imageWidth = waterafallData[0].length;
     const imageHeight = waterafallData.length;
+
+    waterfallCanvas.width = imageWidth;
+    waterfallCanvas.height = waterfallMaxData;
+
+    console.log("waterfallWidth", imageWidth, "waterfallHeight", imageHeight);
+    
     let waterfallImage = new ImageData(imageWidth, imageHeight);
 
     // Draw waterfall
@@ -412,4 +394,22 @@ async function toggle_sound() {
         document.getElementById("toggle_sound").value = "start_audio";
         samplesProcessorNode.disconnect();
     }
+}
+
+function demo() {
+    const hz = 440;
+    for (j = 0; j < 350; j++) {
+        // fill all 44100 elements of array with Math.sin() values
+        const sineWaveArray = new Int8Array(1024 * 4);
+        for (i = 0; i < sineWaveArray.length; i++) {
+            let t = (Math.sin(i * Math.PI * 2 / hz) - 1) * 50;
+            sineWaveArray[i] = t;
+        }
+        waterafallData.unshift(sineWaveArray);
+    }
+
+    initialize();
+    drawGrid();
+    drawSpectrum();
+    drawWaterfall();
 }

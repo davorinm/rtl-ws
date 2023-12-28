@@ -10,16 +10,33 @@ PPDEFS=-DRTL_WS_DEBUG
 
 CFLAGS=-I/usr/include
 
+# Platform
+PLUTO=1
+
 # Embedding files
 EMBED_FILES=1
+
+# Souces
+MAIN_CSOURCEFILES=src/main.c src/mongoose/mongoose.c src/dsp/spectrum.c src/web/web_handler.c src/web/ws_handler.c
+TOOLS_CSOURCEFILES=src/tools/helpers.c src/tools/list.c src/tools/rate_logger.c src/tools/timer.c
+PLUTO_CSOURCEFILES=src/sensor/sensor_pluto_helpers.c src/sensor/sensor_pluto.c
+RTLSDR_CSOURCEFILES=src/sensor/sensor_rtlsdr.c
+CSOURCEFILES=$(MAIN_CSOURCEFILES) $(TOOLS_CSOURCEFILES)
+
+ifeq ($(PLUTO),1)
+CSOURCEFILES += $(PLUTO_CSOURCEFILES)
+PERF_LIBS += -liio
+else
+CSOURCEFILES += $(RTLSDR_CSOURCEFILES)
+PERF_LIBS += -lrtlsdr
+endif
 
 ifeq ($(EMBED_FILES),1)
 FILES_TO_EMBED ?= $(wildcard resources/*)
 PERF_OPTS += -DMG_ENABLE_PACKED_FS=1
+CSOURCEFILES += src/mongoose/packed_fs.c
 endif
 
-# Souces
-CSOURCEFILES=$(shell find $(SRCDIR) -iname \*.c)
 COBJFILES=$(subst .c,.o,$(subst $(SRCDIR),$(BUILDDIR),$(CSOURCEFILES)))
 
 # Docker
@@ -29,18 +46,12 @@ DOCKERIMAGE=build_system
 
 #=====================================================
 
-build: PERF_LIBS+=-lrtlsdr
-build: PPDEFS+=-DSENSOR_RTLSDR
 build: $(PROGRAM)
 
-build-pluto: PERF_LIBS+=-liio
-build-pluto: PPDEFS+=-DSENSOR_PLUTO
 build-pluto: $(PROGRAM)
 
 pluto: CC=arm-linux-gnueabihf-gcc
 pluto: PERF_OPTS+=-mfloat-abi=hard --sysroot=files/sysroot-v0.38 -std=gnu99
-pluto: PERF_LIBS=-lfftw3 -lpthread -liio -lm
-pluto: PPDEFS+=-DSENSOR_PLUTO
 pluto: pack_fs $(PROGRAM)
 
 #=====================================================

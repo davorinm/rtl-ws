@@ -55,8 +55,8 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
     }
     else if (ev == MG_EV_WRITE)
     {
-        int64_t t = *(int64_t *)ev_data;
-        MG_DEBUG(("MG_EV_WRITE bytes_written: %lld", t));
+        // long* bytes_written = (long*)ev_data;
+		// DEBUG("MG_EV_WRITE bytes_written: %ld\n", *bytes_written);
     }
     else if (ev == MG_EV_WS_OPEN)
     {
@@ -95,7 +95,7 @@ static void *timer_fn(void *arg)
 {
     while (!force_exit)
     {
-        usleep(100000);
+        usleep(250000);
 
         // INFO("W\n");
         struct mg_mgr *mgr = (struct mg_mgr *)arg;
@@ -115,10 +115,9 @@ static void *timer_fn(void *arg)
             continue;
         }
 
-        // if (!c->is_writable) {
-        //     INFO("Connection is writable %i\n", c->is_writable);
-        //     continue;
-        // }
+        // INFO("Connection is_writable %i\n", c->is_writable);
+        // INFO("Connection is_resp %i\n", c->is_resp);
+        // INFO("Connection is_readable %i\n", c->is_readable);
 
         struct per_session_data__rtl_ws *pss = (struct per_session_data__rtl_ws *)c->fn_data;
         ws_handler_data(c, pss);
@@ -136,7 +135,7 @@ void web_init()
 
     // Mongoose init
     mg_mgr_init(&mgr);       // Initialise event manager
-    mg_log_set(MG_LL_DEBUG); // Set log level
+    // mg_log_set(MG_LL_DEBUG); // Set log level
 
     printf("Starting WS listener on %s/websocket\n", s_listen_on);
 

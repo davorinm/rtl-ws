@@ -3,3 +3,4 @@ plutoExample/files
 wsdr/build
 wsdr/files
 *.o
+pack
