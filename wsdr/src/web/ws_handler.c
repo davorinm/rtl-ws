@@ -10,7 +10,8 @@
 #define SEND_BUFFER_SIZE 1024 * 64
 
 #define FREQ_CMD "freq"
-#define SAMPLE_RATE_CMD "bw"
+#define BAND_WIDTH_CMD "bw"
+#define SAMPLE_RATE_CMD "samplerate"
 #define SPECTRUM_GAIN_CMD "spectrumgain"
 #define START_CMD "start"
 #define STOP_CMD "stop"
@@ -28,6 +29,7 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
 
     int f = 0;
     int bw = 0;
+    int sr = 0;
     int spectrum_gain = 0;
     char *in_buffer = NULL;
 
@@ -40,11 +42,17 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
         INFO("Trying to tune to %d Hz...\n", f);
         sensor_set_frequency(f);
     }
+    else if (mg_strstr(command, mg_str(BAND_WIDTH_CMD)))
+    {
+        bw = atoi(command.ptr + strlen(BAND_WIDTH_CMD));
+        INFO("Trying to set band width to %d Hz...\n", bw);
+        sensor_set_band_width(bw);
+    }
     else if (mg_strstr(command, mg_str(SAMPLE_RATE_CMD)))
     {
-        bw = atoi(command.ptr + strlen(SAMPLE_RATE_CMD));
-        INFO("Trying to set sample rate to %d Hz...\n", bw);
-        sensor_set_sample_rate(bw);
+        sr = atoi(command.ptr + strlen(SAMPLE_RATE_CMD));
+        INFO("Trying to set sample rate to %d Hz...\n", sr);
+        sensor_set_sample_rate(sr);
     }
     else if (mg_strstr(command, mg_str(SPECTRUM_GAIN_CMD)))
     {
@@ -115,7 +123,7 @@ static void ws_update_client(struct mg_connection *c)
     int n = 0, nnn = 0;
 
     // Set meta data
-    n = sprintf(data_buffer, "Tf %u;b %u;s %lf;y %u", sensor_get_freq(), sensor_get_sample_rate(), sensor_get_gain(), PLUTO_SAMPLES_PER_READ);
+    n = sprintf(data_buffer, "Tf %u;b %u;s %u;g %lf;y %u", sensor_get_freq(), sensor_get_band_width(), sensor_get_sample_rate(), sensor_get_gain(), PLUTO_SAMPLES_PER_READ);
 
     DEBUG("ws_update_client %s\n", data_buffer);
 

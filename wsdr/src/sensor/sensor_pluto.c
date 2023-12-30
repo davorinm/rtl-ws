@@ -212,6 +212,27 @@ int sensor_set_frequency(uint32_t f)
     return ret;
 }
 
+uint32_t sensor_get_band_width()
+{
+    return rxcfg.bw_hz;
+}
+
+int sensor_set_band_width(uint32_t bw)
+{
+    if (rxcfg.bw_hz == bw)
+    {
+        DEBUG("Sample rate already set\n");
+        return 0;
+    }
+
+    rxcfg.bw_hz = bw;
+
+    DEBUG("* Configuring AD9361 for streaming\n");
+    int ret = cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0);
+
+    return ret;
+}
+
 uint32_t sensor_get_sample_rate()
 {
     return rxcfg.fs_hz;

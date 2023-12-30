@@ -4,9 +4,10 @@ let last_x = 0, last_y = 0;
 let socket_lm;
 
 
-let real_spectrumgain = 0;
 let real_frequency = 100000;
 let real_bandwidth = 2048;
+let real_samplerate = 1024;
+let real_spectrumgain = 0;
 let real_spectrumSamples = 0;
 
 let sound_on = false;
@@ -105,15 +106,7 @@ function connect() {
                 while (f < j.length) {
                     const i = j[f++].split(' ');
 
-                    if (i[0] == 'b') {
-                        let bandwidth = parseInt(i[1]);
-                        if (real_bandwidth != bandwidth) {
-                            real_bandwidth = bandwidth;
-                            let bw_element = document.getElementById("bandwidth");
-                            bw_element.value = real_bandwidth;
-                            redraw_hz_axis = true;
-                        }
-                    } else if (i[0] == 'f') {
+                    if (i[0] == 'f') {
                         let frequency = parseInt(i[1]);
                         if (real_frequency != frequency) {
                             real_frequency = frequency;
@@ -121,7 +114,23 @@ function connect() {
                             freq_element.value = real_frequency;
                             redraw_hz_axis = true;
                         }
+                    } else if (i[0] == 'b') {
+                        let bandwidth = parseInt(i[1]);
+                        if (real_bandwidth != bandwidth) {
+                            real_bandwidth = bandwidth;
+                            let bw_element = document.getElementById("bandwidth");
+                            bw_element.value = real_bandwidth;
+                            redraw_hz_axis = true;
+                        }
                     } else if (i[0] == 's') {
+                        let samplerate = parseInt(i[1]);
+                        if (real_samplerate != samplerate) {
+                            real_samplerate = samplerate;
+                            let samplerate_element = document.getElementById("samplerate");
+                            samplerate_element.value = real_samplerate;
+                            redraw_hz_axis = true;
+                        }
+                    } else if (i[0] == 'g') {
                         let spectrumgain = parseInt(i[1]);
                         if (real_spectrumgain != spectrumgain) {
                             real_spectrumgain = spectrumgain;
@@ -169,7 +178,7 @@ function spectrumDownListener(e) {
 
     //console.log("downListener", "elementRelativeX", elementRelativeX, "elementRelativeY", elementRelativeY, "canvasRelativeX", canvasRelativeX, "canvasRelativeY", canvasRelativeY);
 
-    let pointForHz = real_bandwidth / real_spectrumSamples;
+    let pointForHz = real_samplerate / real_spectrumSamples;
     let hz = canvasRelativeX * pointForHz + real_frequency;
     console.log("selected freq", hz);
 }
@@ -197,7 +206,7 @@ function waterfallDownListener(e) {
     const canvasRelativeX = elementRelativeX * waterfallCanvas.width / waterfallCanvas.clientWidth;
     const canvasRelativeY = elementRelativeY * waterfallCanvas.height / waterfallCanvas.clientHeight;
 
-    let pointForHz = real_bandwidth / real_spectrumSamples;
+    let pointForHz = real_samplerate / real_spectrumSamples;
     let hz = canvasRelativeX * pointForHz + real_frequency;
     console.log("selected freq", hz);
 }
@@ -412,6 +421,11 @@ function frequency_change() {
 function bw_change() {
     let bandwidth = document.getElementById("bandwidth").value;
     socket_lm.send("bw " + bandwidth);
+}
+
+function samplerate_change() {
+    let samplerate = document.getElementById("samplerate").value;
+    socket_lm.send("samplerate " + samplerate);
 }
 
 function spectrumgain_change() {

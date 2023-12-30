@@ -8,6 +8,9 @@ int sensor_init();
 uint32_t sensor_get_freq();
 int sensor_set_frequency(uint32_t f);
 
+uint32_t sensor_get_band_width();
+int sensor_set_band_width(uint32_t bw);
+
 uint32_t sensor_get_sample_rate();
 int sensor_set_sample_rate(uint32_t fs);
 
