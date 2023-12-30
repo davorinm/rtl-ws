@@ -1,20 +1,14 @@
 let pos = 0;
 let started = false;
-let down = 0;
-let no_last = 1;
 let last_x = 0, last_y = 0;
 let socket_lm;
-let color = "#000000";
-let spectrogram_offset = 315;
-let frequency = 100000;
-let spectrumgain = 0;
+
+
 let real_spectrumgain = 0;
 let real_frequency = 100000;
-let bandwidth = 2048;
 let real_bandwidth = 2048;
-let conn_counter = 0;
-let conn_inc = -1;
-let waterafallData = new Array();
+let real_spectrumSamples = 0;
+
 let sound_on = false;
 let samplesProcessorNode;
 let audioContext;
@@ -30,12 +24,30 @@ let bandCtx;
 
 let waterfallCanvas;
 let waterfallCtx;
+let waterfallData = new Array();
 let waterfallMaxData = 350;
+
+var colormap = [];
+for (i = 0; i < 256; i++) {
+    if ((i < 43))
+        colormap[i] = new Uint8ClampedArray([0, 0, Math.round(255 * (i / 43)), 255]);
+    if ((i >= 43) && (i < 87))
+        colormap[i] = new Uint8ClampedArray([0, Math.round(255 * (i - 43) / 43), 255, 255]);
+    if ((i >= 87) && (i < 120))
+        colormap[i] = new Uint8ClampedArray([0, 255, Math.round(255 - (255 * (i - 87) / 32)), 255]);
+    if ((i >= 120) && (i < 154))
+        colormap[i] = new Uint8ClampedArray([Math.round((255 * (i - 120) / 33)), 255, 0, 255]);
+    if ((i >= 154) && (i < 217))
+        colormap[i] = new Uint8ClampedArray([255, Math.round(255 - (255 * (i - 154) / 62)), 0, 255]);
+    if ((i >= 217))
+        colormap[i] = new Uint8ClampedArray([255, 0, Math.round(128 * (i - 217) / 38), 255]);
+}
 
 window.onload = function (event) {
     initialize();
     drawGrid();
     drawSpectrum();
+    drawFrequencyBands()
     drawWaterfall();
 
     connect();
@@ -67,10 +79,10 @@ function connect() {
             if (firstChar == 'S') {
                 // Spectrum data
                 let spectrumData = new Int8Array(msg.data, 1);
-                waterafallData.unshift(spectrumData);
-    
-                if (waterafallData.length > waterfallMaxData) {
-                    waterafallData.length = waterfallMaxData;
+                waterfallData.unshift(spectrumData);
+
+                if (waterfallData.length > waterfallMaxData) {
+                    waterfallData.length = waterfallMaxData;
                 }
 
                 drawSpectrum();
@@ -94,38 +106,39 @@ function connect() {
                     const i = j[f++].split(' ');
 
                     if (i[0] == 'b') {
-                        let bw_element = document.getElementById("bandwidth");
-                        if ((bw_element.value * 1000) != i[1]) {
-                            bw_element.style.color = "lightgray";
-                        } else {
-                            bw_element.style.color = "black";
-                            real_bandwidth = parseInt(bandwidth);
+                        let bandwidth = parseInt(i[1]);
+                        if (real_bandwidth != bandwidth) {
+                            real_bandwidth = bandwidth;
+                            let bw_element = document.getElementById("bandwidth");
+                            bw_element.value = real_bandwidth;
                             redraw_hz_axis = true;
                         }
                     } else if (i[0] == 'f') {
-                        let freq_element = document.getElementById("frequency");
-                        if ((freq_element.value * 1000) != i[1]) {
-                            freq_element.style.color = "lightgray";
-                        } else {
-                            freq_element.style.color = "black";
-                            real_frequency = parseInt(frequency);
+                        let frequency = parseInt(i[1]);
+                        if (real_frequency != frequency) {
+                            real_frequency = frequency;
+                            let freq_element = document.getElementById("frequency");
+                            freq_element.value = real_frequency;
                             redraw_hz_axis = true;
                         }
                     } else if (i[0] == 's') {
-                        let spectrumgain_element = document.getElementById("spectrumgain");
-                        if (spectrumgain_element.value != i[1]) {
-                            spectrumgain_element.style.color = "lightgray";
-                        } else {
-                            spectrumgain_element.style.color = "black";
-                            real_spectrumgain = parseInt(spectrumgain);
+                        let spectrumgain = parseInt(i[1]);
+                        if (real_spectrumgain != spectrumgain) {
+                            real_spectrumgain = spectrumgain;
+                            let spectrumgain_element = document.getElementById("spectrumgain");
+                            spectrumgain_element.value = real_spectrumgain;
+                            redraw_hz_axis = true;
                         }
                     } else if (i[0] == 'y') {
-                        console.log("number of samples", i[1]);
+                        let spectrumSamples = parseInt(i[1]);
+                        if (real_spectrumSamples != spectrumSamples) {
+                            real_spectrumSamples = spectrumSamples;
+                        }
                     }
                 }
 
                 if (redraw_hz_axis) {
-                    upateFrequencyBands()
+                    drawFrequencyBands()
                 }
             }
         }
@@ -142,11 +155,74 @@ function connect() {
     }
 }
 
+//// Spectrum listeners
+
+let spectrumMouseDown = false;
+
+function spectrumDownListener(e) {
+    spectrumMouseDown = true;
+
+    const elementRelativeX = e.offsetX;
+    const elementRelativeY = e.offsetY;
+    const canvasRelativeX = elementRelativeX * spectrumCanvas.width / spectrumCanvas.clientWidth;
+    const canvasRelativeY = elementRelativeY * spectrumCanvas.height / spectrumCanvas.clientHeight;
+
+    //console.log("downListener", "elementRelativeX", elementRelativeX, "elementRelativeY", elementRelativeY, "canvasRelativeX", canvasRelativeX, "canvasRelativeY", canvasRelativeY);
+
+    let pointForHz = real_bandwidth / real_spectrumSamples;
+    let hz = canvasRelativeX * pointForHz + real_frequency;
+    console.log("selected freq", hz);
+}
+
+function spectrumMoveListener(e) {
+    if (spectrumMouseDown) {
+        console.log("spectrumMoveListener");
+    }
+}
+
+function spectrumUpListener(e) {
+    spectrumMouseDown = false;
+    console.log("spectrumUpListener");
+}
+
+//// Waterfall listeners
+
+let waterfallMouseDown = false;
+
+function waterfallDownListener(e) {
+    waterfallMouseDown = true;
+
+    const elementRelativeX = e.offsetX;
+    const elementRelativeY = e.offsetY;
+    const canvasRelativeX = elementRelativeX * waterfallCanvas.width / waterfallCanvas.clientWidth;
+    const canvasRelativeY = elementRelativeY * waterfallCanvas.height / waterfallCanvas.clientHeight;
+
+    let pointForHz = real_bandwidth / real_spectrumSamples;
+    let hz = canvasRelativeX * pointForHz + real_frequency;
+    console.log("selected freq", hz);
+}
+
+function waterfallMoveListener(e) {
+    if (waterfallMouseDown) {
+        console.log("waterfallMoveListener");
+    }
+}
+
+function waterfallUpListener(e) {
+    waterfallMouseDown = false;
+    console.log("waterfallUpListener");
+}
+
+////////
+
 function initialize() {
     const dpr = window.devicePixelRatio;
 
     // Spectrum
     spectrumCanvas = document.getElementById('spectrumCanvas');
+    spectrumCanvas.addEventListener('mousedown', spectrumDownListener)
+    spectrumCanvas.addEventListener('mousemove', spectrumMoveListener)
+    spectrumCanvas.addEventListener('mouseup', spectrumUpListener)
     spectrumCtx = spectrumCanvas.getContext("2d");
 
     // Spectrum grid
@@ -159,6 +235,9 @@ function initialize() {
 
     // Waterfall
     waterfallCanvas = document.getElementById('waterfallCanvas');
+    waterfallCanvas.addEventListener('mousedown', waterfallDownListener)
+    waterfallCanvas.addEventListener('mousemove', waterfallMoveListener)
+    waterfallCanvas.addEventListener('mouseup', waterfallUpListener)
     waterfallCtx = waterfallCanvas.getContext("2d");
 
     // other
@@ -187,17 +266,17 @@ function drawSpectrum() {
     const spectrumCtxWidth = spectrumCanvas.clientWidth;
     const spectrumCtxHeight = spectrumCanvas.clientHeight;
 
-    if (waterafallData.length <= 0) {
+    if (waterfallData.length <= 0) {
         return;
     }
 
-    const dataCount = waterafallData[0].length;
+    const dataCount = waterfallData[0].length;
 
     spectrumCanvas.width = dataCount;
 
-    var maxValue = Math.max.apply(Math, waterafallData[0]);
-    var minValue = Math.min.apply(Math, waterafallData[0]);
-    console.log("maxValue", maxValue, "minValue", minValue);
+    var maxValue = Math.max.apply(Math, waterfallData[0]);
+    var minValue = Math.min.apply(Math, waterfallData[0]);
+    //console.log("maxValue", maxValue, "minValue", minValue);
 
     spectrumCtx.clearRect(0, 0, spectrumCtxWidth, spectrumCtxHeight);
     spectrumCtx.beginPath();
@@ -206,7 +285,7 @@ function drawSpectrum() {
 
     let spectrumCtxPosHorizontal = 0
     for (var idx = 0; idx < dataCount; idx++) {
-        const value = waterafallData[0][idx];
+        const value = waterfallData[0][idx];
         const yPos = -value;
         if (idx == 0) {
             spectrumCtx.moveTo(0, yPos);
@@ -245,69 +324,57 @@ function drawGrid() {
     spectrumGridCtx.stroke();
 }
 
-function upateFrequencyBands() {
-    const bandCtxWidth = bandCtx.canvas.clientWidth;
-    const bandCtxHeight = bandCtx.canvas.clientHeight;
+function drawFrequencyBands() {
+    const bandCtxWidth = bandCanvas.width;
+    const bandCtxHeight = bandCanvas.height;
 
     const textVerticalPosition = bandCtxHeight / 2;
 
     bandCtx.clearRect(0, 0, bandCtxWidth, bandCtxHeight);
 
-    bandCtx.font = "14px Georgia";
+    bandCtx.font = "22px Georgia";
     bandCtx.fillStyle = "black";
 
-    var freqtext = (real_frequency - real_bandwidth / 2) / 1000 + " MHz";
-    var w = bandCtx.measureText(freqtext).width;
-    bandCtx.fillText(freqtext, 0, textVerticalPosition);
+    let leftFreqtext = (real_frequency) / 1000000 + " MHz";
+    var w = bandCtx.measureText(leftFreqtext).width;
+    bandCtx.fillText(leftFreqtext, 0, textVerticalPosition);
 
-    freqtext = (real_frequency) / 1000 + " MHz";
-    w = bandCtx.measureText(freqtext).width;
-    bandCtx.fillText(freqtext, (bandCtxWidth / 2) - (w / 2), textVerticalPosition);
+    let centerFreqtext = (real_frequency + real_bandwidth / 2) / 1000000 + " MHz";
+    w = bandCtx.measureText(centerFreqtext).width;
+    bandCtx.fillText(centerFreqtext, (bandCtxWidth / 2) - (w / 2), textVerticalPosition);
 
-    freqtext = (real_frequency + real_bandwidth / 2) / 1000 + " MHz";
-    w = bandCtx.measureText(freqtext).width;
-    bandCtx.fillText(freqtext, bandCtxWidth - w, textVerticalPosition);
-
-    bandCtx.beginPath();
-    bandCtx.lineWidth = "1";
-    bandCtx.fillStyle = "lightgray";
-    bandCtx.arc(conn_counter * 5 + 5, 5, 4, 0, 2 * Math.PI);
-    bandCtx.fill();
-    bandCtx.closePath();
+    let rightFreqtext = (real_frequency + real_bandwidth) / 1000000 + " MHz";
+    w = bandCtx.measureText(rightFreqtext).width;
+    bandCtx.fillText(rightFreqtext, bandCtxWidth - w, textVerticalPosition);
 }
 
 function colorFromAmplitude(ampl) {
-    let r, g, b;
+    let tmpVal = (ampl + 127);
+    let color = colormap[tmpVal]
 
-    var tmp = (ampl + 127);
-    
-    r = tmp;
-    g = tmp;
-    b = tmp;
-
-    return [r, g, b];
+    return color;
 }
 
 function drawWaterfall() {
-    if (waterafallData.length <= 0) {
+    if (waterfallData.length <= 0) {
         return;
     }
-    
-    const imageWidth = waterafallData[0].length;
-    const imageHeight = waterafallData.length;
+
+    const imageWidth = waterfallData[0].length;
+    const imageHeight = waterfallData.length;
 
     waterfallCanvas.width = imageWidth;
     waterfallCanvas.height = waterfallMaxData;
 
-    console.log("waterfallWidth", imageWidth, "waterfallHeight", imageHeight);
-    
+    //console.log("waterfallWidth", imageWidth, "waterfallHeight", imageHeight);
+
     let waterfallImage = new ImageData(imageWidth, imageHeight);
 
     // Draw waterfall
     let idx = 0;
-    for (var y = 0; y < waterafallData.length; y++) {
-        for (var x = 0; x < waterafallData[y].length; x++) {
-            var ampl = waterafallData[y][x];
+    for (var y = 0; y < waterfallData.length; y++) {
+        for (var x = 0; x < waterfallData[y].length; x++) {
+            var ampl = waterfallData[y][x];
 
             let color = colorFromAmplitude(ampl);
 
@@ -318,15 +385,15 @@ function drawWaterfall() {
             idx += 4;
         }
     }
-          
+
     waterfallCtx.putImageData(waterfallImage, 0, 0);
 }
 
-async function resizeImageData (imageData, width, height) {
+async function resizeImageData(imageData, width, height) {
     const resizeWidth = width >> 0
     const resizeHeight = height >> 0
     const ibm = await window.createImageBitmap(imageData, 0, 0, imageData.width, imageData.height, {
-      resizeWidth, resizeHeight
+        resizeWidth, resizeHeight
     })
     const canvas = document.createElement('canvas')
     canvas.width = resizeWidth
@@ -335,20 +402,20 @@ async function resizeImageData (imageData, width, height) {
     ctx.scale(resizeWidth / imageData.width, resizeHeight / imageData.height)
     ctx.drawImage(ibm, 0, 0)
     return ctx.getImageData(0, 0, resizeWidth, resizeHeight)
-  }
+}
 
 function frequency_change() {
-    frequency = document.getElementById("frequency").value;
+    let frequency = document.getElementById("frequency").value;
     socket_lm.send("freq " + frequency);
 }
 
 function bw_change() {
-    bandwidth = document.getElementById("bandwidth").value;
+    let bandwidth = document.getElementById("bandwidth").value;
     socket_lm.send("bw " + bandwidth);
 }
 
 function spectrumgain_change() {
-    spectrumgain = document.getElementById("spectrumgain").value;
+    let spectrumgain = document.getElementById("spectrumgain").value;
     socket_lm.send("spectrumgain " + spectrumgain);
 }
 
@@ -399,13 +466,12 @@ async function toggle_sound() {
 function demo() {
     const hz = 440;
     for (j = 0; j < 350; j++) {
-        // fill all 44100 elements of array with Math.sin() values
-        const sineWaveArray = new Int8Array(1024 * 4);
+        const sineWaveArray = new Int8Array(1024 * 16);
         for (i = 0; i < sineWaveArray.length; i++) {
             let t = (Math.sin(i * Math.PI * 2 / hz) - 1) * 50;
             sineWaveArray[i] = t;
         }
-        waterafallData.unshift(sineWaveArray);
+        waterfallData.unshift(sineWaveArray);
     }
 
     initialize();

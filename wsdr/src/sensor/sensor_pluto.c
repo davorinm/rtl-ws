@@ -193,7 +193,7 @@ int sensor_init()
 
 uint32_t sensor_get_freq()
 {
-    return rxcfg.fs_hz;
+    return rxcfg.lo_hz;
 }
 
 int sensor_set_frequency(uint32_t f)

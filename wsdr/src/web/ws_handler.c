@@ -36,19 +36,19 @@ void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, stru
 
     if (mg_strstr(command, mg_str(FREQ_CMD)))
     {
-        f = atoi(&command.ptr[strlen(FREQ_CMD)]) * 1000;
+        f = atoi(command.ptr + strlen(FREQ_CMD));
         INFO("Trying to tune to %d Hz...\n", f);
         sensor_set_frequency(f);
     }
     else if (mg_strstr(command, mg_str(SAMPLE_RATE_CMD)))
     {
-        bw = atoi(&in_buffer[strlen(SAMPLE_RATE_CMD)]) * 1000;
+        bw = atoi(command.ptr + strlen(SAMPLE_RATE_CMD));
         INFO("Trying to set sample rate to %d Hz...\n", bw);
         sensor_set_sample_rate(bw);
     }
     else if (mg_strstr(command, mg_str(SPECTRUM_GAIN_CMD)))
     {
-        spectrum_gain = atoi(&command.ptr[strlen(SPECTRUM_GAIN_CMD)]);
+        spectrum_gain = atoi(command.ptr + strlen(SPECTRUM_GAIN_CMD));
         INFO("Spectrum gain set to %d dB\n", spectrum_gain);
         sensor_set_gain(spectrum_gain);
     }
