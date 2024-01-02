@@ -32,38 +32,17 @@ static char *get_ch_name(const char *type, int id)
 }
 
 /* finds AD9361 local oscillator IIO configuration channels */
-static bool get_lo_chan(struct iio_context *ctx, enum iodev d, struct iio_channel **chn)
+static bool get_lo_rx_chan(struct iio_context *ctx, struct iio_channel **chn)
 {
-    switch (d)
-    {
-        // LO chan is always output, i.e. true
-    case RX:
-        *chn = iio_device_find_channel(get_ad9361_phy(ctx), get_ch_name("altvoltage", 0), true);
-        return *chn != NULL;
-    case TX:
-        *chn = iio_device_find_channel(get_ad9361_phy(ctx), get_ch_name("altvoltage", 1), true);
-        return *chn != NULL;
-    default:
-        DEBUG("enum iodev not found\n");
-        return false;
-    }
+    *chn = iio_device_find_channel(get_ad9361_phy(ctx), get_ch_name("altvoltage", 0), true);
+    return *chn != NULL;
 }
 
 /* finds AD9361 phy IIO configuration channel with id chid */
-static bool get_phy_chan(struct iio_context *ctx, enum iodev d, int chid, struct iio_channel **chn)
+static bool get_phy_rx_chan(struct iio_context *ctx, int chid, struct iio_channel **chn)
 {
-    switch (d)
-    {
-    case RX:
-        *chn = iio_device_find_channel(get_ad9361_phy(ctx), get_ch_name("voltage", chid), false);
-        return *chn != NULL;
-    case TX:
-        *chn = iio_device_find_channel(get_ad9361_phy(ctx), get_ch_name("voltage", chid), true);
-        return *chn != NULL;
-    default:
-        DEBUG("enum iodev not found\n");
-        return false;
-    }
+    *chn = iio_device_find_channel(get_ad9361_phy(ctx), get_ch_name("voltage", chid), false);
+    return *chn != NULL;
 }
 
 /* write attribute: long long int */
@@ -126,20 +105,10 @@ static void wr_ch_str(struct iio_channel *chn, const char *attribute, const char
 // ======
 
 /* finds AD9361 streaming IIO devices */
-bool get_ad9361_stream_dev(struct iio_context *ctx, enum iodev d, struct iio_device **dev)
+bool get_ad9361_rx_stream_dev(struct iio_context *ctx, struct iio_device **dev)
 {
-    switch (d)
-    {
-    case TX:
-        *dev = iio_context_find_device(ctx, "cf-ad9361-dds-core-lpc");
-        return *dev != NULL;
-    case RX:
-        *dev = iio_context_find_device(ctx, "cf-ad9361-lpc");
-        return *dev != NULL;
-    default:
-        DEBUG("enum iodev not found\n");
-        return false;
-    }
+    *dev = iio_context_find_device(ctx, "cf-ad9361-lpc");
+    return *dev != NULL;
 }
 
 static int save_to_ini_chn_cb(struct iio_channel *chn, const char *attr, const char *val, size_t len, void *d)
@@ -153,13 +122,13 @@ static int save_to_ini_chn_cb(struct iio_channel *chn, const char *attr, const c
 }
 
 /* applies streaming configuration through IIO */
-bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, enum iodev type, int chid)
+bool cfg_ad9361_rx_stream_ch(struct iio_context *ctx, struct sensor_config *cfg, int chid)
 {
     struct iio_channel *chn = NULL;
 
     // Configure phy and lo channels
     printf("* Acquiring AD9361 phy channel %d\n", chid);
-    if (!get_phy_chan(ctx, type, chid, &chn))
+    if (!get_phy_rx_chan(ctx, chid, &chn))
     {
         printf("* ERROR Acquiring AD9361 phy channel %d\n", chid);
         return false;
@@ -176,10 +145,10 @@ bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, en
     iio_channel_attr_read_all(chn, save_to_ini_chn_cb, NULL);
 
     // Configure LO channel
-    printf("* Acquiring AD9361 %s lo channel\n", type == TX ? "TX" : "RX");
-    if (!get_lo_chan(ctx, type, &chn))
+    printf("* Acquiring AD9361 RX lo channel\n");
+    if (!get_lo_rx_chan(ctx, &chn))
     {
-        printf("* ERROR Acquiring AD9361 %s lo channel\n", type == TX ? "TX" : "RX");
+        printf("* ERROR Acquiring AD9361 RX lo channel\n");
         return false;
     }
     
@@ -193,12 +162,12 @@ bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, en
 }
 
 /* finds AD9361 streaming IIO channels */
-bool get_ad9361_stream_ch(enum iodev d, struct iio_device *dev, int chid, struct iio_channel **chn)
+bool get_ad9361_rx_stream_ch(struct iio_device *dev, int chid, struct iio_channel **chn)
 {
-    *chn = iio_device_find_channel(dev, get_ch_name("voltage", chid), d == TX);
+    *chn = iio_device_find_channel(dev, get_ch_name("voltage", chid), false);
     if (!*chn)
     {
-        *chn = iio_device_find_channel(dev, get_ch_name("altvoltage", chid), d == TX);
+        *chn = iio_device_find_channel(dev, get_ch_name("altvoltage", chid), false);
     }
     return *chn != NULL;
 }

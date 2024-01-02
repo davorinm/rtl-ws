@@ -26,7 +26,7 @@ static struct iio_channel *rx0_q = NULL;
 static struct iio_buffer *rxbuf = NULL;
 
 // Stream configurations
-struct stream_cfg rxcfg;
+struct sensor_config config;
 
 // Streaming devices
 struct iio_device *rx;
@@ -114,12 +114,12 @@ int sensor_init()
     int ret;
 
     // RX stream config
-	rxcfg.bw_hz = MHZ(10);   // 2 MHz rf bandwidth
-	rxcfg.fs_hz = MHZ(10);   // 2.5 MS/s rx sample rate
-	rxcfg.lo_hz = MHZ(430); // 2.5 GHz rf frequency
-    rxcfg.agc_mode = "slow_attack"; // "manual fast_attack slow_attack hybrid" 
-    rxcfg.gain = 60;              // 0 dB gain
-    rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
+	config.bw_hz = MHZ(10);   // 2 MHz rf bandwidth
+	config.fs_hz = MHZ(10);   // 2.5 MS/s rx sample rate
+	config.lo_hz = MHZ(430); // 2.5 GHz rf frequency
+    config.agc_mode = "slow_attack"; // "manual fast_attack slow_attack hybrid" 
+    config.gain = 60;              // 0 dB gain
+    config.rfport = "A_BALANCED"; // port A (select for rf freq.)
     // "A_BALANCED B_BALANCED C_BALANCED A_N A_P B_N B_P C_N C_P TX_MONITOR1 TX_MONITOR2 TX_MONITOR1_2" 
 
     DEBUG("* Acquiring IIO context\n");
@@ -142,7 +142,7 @@ int sensor_init()
     DEBUG("Found %i devices\n", ret);
 
     DEBUG("* Acquiring AD9361 streaming devices\n");
-    ret = get_ad9361_stream_dev(ctx, RX, &rx);
+    ret = get_ad9361_rx_stream_dev(ctx, &rx);
     if (ret < 0)
     {
         DEBUG("No rx dev found\n");
@@ -151,7 +151,7 @@ int sensor_init()
     }
 
     DEBUG("* Configuring AD9361 for streaming\n");
-    ret = cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0);
+    ret = cfg_ad9361_rx_stream_ch(ctx, &config, 0);
     if (ret < 0)
     {
         DEBUG("RX port 0 not found\n");
@@ -160,14 +160,14 @@ int sensor_init()
     }
 
     DEBUG("* Initializing AD9361 IIO streaming channels\n");
-    ret = get_ad9361_stream_ch(RX, rx, 0, &rx0_i);
+    ret = get_ad9361_rx_stream_ch(rx, 0, &rx0_i);
     if (ret < 0)
     {
         DEBUG("RX chan i not found\n");
         sensor_close();
         return -5;
     }
-    ret = get_ad9361_stream_ch(RX, rx, 1, &rx0_q);
+    ret = get_ad9361_rx_stream_ch(rx, 1, &rx0_q);
     if (ret < 0)
     {
         DEBUG("RX chan q not found\n");
@@ -193,85 +193,85 @@ int sensor_init()
 
 uint32_t sensor_get_freq()
 {
-    return rxcfg.lo_hz;
+    return config.lo_hz;
 }
 
 int sensor_set_frequency(uint32_t f)
 {
-    if (rxcfg.lo_hz == f)
+    if (config.lo_hz == f)
     {
         DEBUG("Frequency already set\n");
         return 0;
     }
 
-    rxcfg.lo_hz = f;
+    config.lo_hz = f;
 
     DEBUG("* Configuring AD9361 for streaming\n");
-    int ret = cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0);
+    int ret = cfg_ad9361_rx_stream_ch(ctx, &config, 0);
 
     return ret;
 }
 
 uint32_t sensor_get_band_width()
 {
-    return rxcfg.bw_hz;
+    return config.bw_hz;
 }
 
 int sensor_set_band_width(uint32_t bw)
 {
-    if (rxcfg.bw_hz == bw)
+    if (config.bw_hz == bw)
     {
         DEBUG("Sample rate already set\n");
         return 0;
     }
 
-    rxcfg.bw_hz = bw;
+    config.bw_hz = bw;
 
     DEBUG("* Configuring AD9361 for streaming\n");
-    int ret = cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0);
+    int ret = cfg_ad9361_rx_stream_ch(ctx, &config, 0);
 
     return ret;
 }
 
 uint32_t sensor_get_sample_rate()
 {
-    return rxcfg.fs_hz;
+    return config.fs_hz;
 }
 
 int sensor_set_sample_rate(uint32_t fs)
 {
-    if (rxcfg.fs_hz == fs)
+    if (config.fs_hz == fs)
     {
         DEBUG("Sample rate already set\n");
         return 0;
     }
 
-    rxcfg.fs_hz = fs;
+    config.fs_hz = fs;
 
     DEBUG("* Configuring AD9361 for streaming\n");
-    int ret = cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0);
+    int ret = cfg_ad9361_rx_stream_ch(ctx, &config, 0);
 
     return ret;
 }
 
 double sensor_get_gain()
 {
-    DEBUG("Sensor gain %2.1f dB\n", rxcfg.gain);
-    return rxcfg.gain;
+    DEBUG("Sensor gain %2.1f dB\n", config.gain);
+    return config.gain;
 }
 
 int sensor_set_gain(double gain)
 {
-    if (rxcfg.gain == gain)
+    if (config.gain == gain)
     {
         DEBUG("Gain already set\n");
         return 0;
     }
 
-    rxcfg.gain = gain;
+    config.gain = gain;
 
     DEBUG("* Configuring AD9361 for streaming\n");
-    int ret = cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0);
+    int ret = cfg_ad9361_rx_stream_ch(ctx, &config, 0);
 
     return ret;
 }
