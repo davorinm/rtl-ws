@@ -19,7 +19,6 @@ double sensor_get_gain();
 
 void sensor_start();
 void sensor_stop();
-
 void sensor_close();
 
 #endif

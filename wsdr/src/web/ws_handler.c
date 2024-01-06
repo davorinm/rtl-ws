@@ -114,7 +114,7 @@ static void ws_update_spectrum(struct mg_connection *c)
     {
         ERROR("Writing failed, error code == %d\n", nnn);
     }
-        
+
     // DEBUG("spectrum bytes_written: %i, %i, %i \n", n, nn, nnn);
 }
 
@@ -135,7 +135,7 @@ static void ws_update_client(struct mg_connection *c)
     }
 }
 
-void ws_handler_data(struct mg_connection *c, struct per_session_data__rtl_ws *pss)
+void ws_handler_data(struct mg_connection *c)
 {
     if (pss->update_client == 1)
     {

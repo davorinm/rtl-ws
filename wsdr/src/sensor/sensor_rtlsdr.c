@@ -165,6 +165,11 @@ int sensor_init()
     return r;
 }
 
+uint32_t sensor_get_freq()
+{
+    return dev->f;
+}
+
 int sensor_set_frequency(uint32_t f)
 {
     int r = 0;
@@ -182,6 +187,19 @@ int sensor_set_frequency(uint32_t f)
         }
     }
     return r;
+}
+
+uint32_t sensor_get_band_width() {
+    return 2000000;
+}
+
+int sensor_set_band_width(uint32_t bw) {
+    return 0;
+}
+
+uint32_t sensor_get_sample_rate()
+{
+    return dev->fs;
 }
 
 int sensor_set_sample_rate(uint32_t fs)
@@ -203,6 +221,11 @@ int sensor_set_sample_rate(uint32_t fs)
     return r;
 }
 
+double sensor_get_gain()
+{
+    return dev->gain;
+}
+
 int sensor_set_gain(double gain)
 {
     int r = 0;
@@ -220,21 +243,6 @@ int sensor_set_gain(double gain)
         }
     }
     return r;
-}
-
-uint32_t sensor_get_freq()
-{
-    return dev->f;
-}
-
-uint32_t sensor_get_sample_rate()
-{
-    return dev->fs;
-}
-
-double sensor_get_gain()
-{
-    return dev->gain;
 }
 
 void sensor_start()

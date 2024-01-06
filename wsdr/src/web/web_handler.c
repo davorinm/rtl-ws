@@ -69,21 +69,16 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
     }
     else if (ev == MG_EV_WS_MSG)
     {
-        INFO("MG_EV_WS_MSG\n");
-
-        // Got websocket frame. Received data is wm->data. Echo it back!
         struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
-
-        printf("GOT CMD: [%.*s]\n", (int)wm->data.len, wm->data.ptr);
+        DEBUG("MG_EV_WS_MSG: [%.*s] falgs: %d\n", (int)wm->data.len, wm->data.ptr, wm->flags);
 
         struct per_session_data__rtl_ws *pss = (struct per_session_data__rtl_ws *)fn_data;
         ws_handler_callback(c, wm, pss);
     }
     else if (ev == MG_EV_WS_CTL)
     {
-        INFO("MG_EV_WS_CTL\n");
         struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
-        printf("GOT CTRL: [%.*s]\n", (int)wm->data.len, wm->data.ptr);
+        DEBUG("MG_EV_WS_CTL: [%.*s] falgs: %d\n", (int)wm->data.len, wm->data.ptr, wm->flags);
     }
 
     (void)fn_data;

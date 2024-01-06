@@ -14,6 +14,11 @@ let sound_on = false;
 let samplesProcessorNode;
 let audioContext;
 
+let spectrumFilterCanvas;
+let spectrumFilterCtx;
+let spectrumFilterStart;
+let spectrumFilterEnd;
+
 let spectrumCanvas;
 let spectrumCtx;
 
@@ -176,22 +181,61 @@ function spectrumDownListener(e) {
     const canvasRelativeX = elementRelativeX * spectrumCanvas.width / spectrumCanvas.clientWidth;
     const canvasRelativeY = elementRelativeY * spectrumCanvas.height / spectrumCanvas.clientHeight;
 
-    //console.log("downListener", "elementRelativeX", elementRelativeX, "elementRelativeY", elementRelativeY, "canvasRelativeX", canvasRelativeX, "canvasRelativeY", canvasRelativeY);
+    console.log("downListener", "elementRelativeX", elementRelativeX, "elementRelativeY", elementRelativeY, "canvasRelativeX", canvasRelativeX, "canvasRelativeY", canvasRelativeY);
 
     let pointForHz = real_samplerate / real_spectrumSamples;
     let hz = canvasRelativeX * pointForHz + real_frequency;
     console.log("selected freq", hz);
+
+    document.getElementById("tuner_frequency").value = '' + hz;
+
+    spectrumFilterStart = canvasRelativeX;
+    spectrumFilterEnd = null;
+
+    drawFilter();
 }
 
 function spectrumMoveListener(e) {
-    if (spectrumMouseDown) {
-        console.log("spectrumMoveListener");
+    if (!spectrumMouseDown) {
+        return;
     }
+
+    console.log("spectrumMoveListener");
+
+    const elementRelativeX = e.offsetX;
+    const elementRelativeY = e.offsetY;
+    const canvasRelativeX = elementRelativeX * spectrumCanvas.width / spectrumCanvas.clientWidth;
+    const canvasRelativeY = elementRelativeY * spectrumCanvas.height / spectrumCanvas.clientHeight;
+
+    let pointForHz = real_samplerate / real_spectrumSamples;
+    let hz = canvasRelativeX * pointForHz + real_frequency;
+    console.log("released freq", hz);
+
+    document.getElementById("tuner_width").value = '' + hz;
+
+    spectrumFilterEnd = canvasRelativeX;
+
+    drawFilter();
 }
 
 function spectrumUpListener(e) {
     spectrumMouseDown = false;
     console.log("spectrumUpListener");
+
+    const elementRelativeX = e.offsetX;
+    const elementRelativeY = e.offsetY;
+    const canvasRelativeX = elementRelativeX * spectrumCanvas.width / spectrumCanvas.clientWidth;
+    const canvasRelativeY = elementRelativeY * spectrumCanvas.height / spectrumCanvas.clientHeight;
+
+    let pointForHz = real_samplerate / real_spectrumSamples;
+    let hz = canvasRelativeX * pointForHz + real_frequency;
+    console.log("released freq", hz);
+    
+    document.getElementById("tuner_width").value = '' + hz;
+
+    spectrumFilterEnd = canvasRelativeX;
+
+    drawFilter();
 }
 
 //// Waterfall listeners
@@ -209,17 +253,56 @@ function waterfallDownListener(e) {
     let pointForHz = real_samplerate / real_spectrumSamples;
     let hz = canvasRelativeX * pointForHz + real_frequency;
     console.log("selected freq", hz);
+
+    document.getElementById("tuner_frequency").value = '' + hz;
+
+    spectrumFilterStart = canvasRelativeX;
+    spectrumFilterEnd = null;
+
+    drawFilter();
 }
 
 function waterfallMoveListener(e) {
-    if (waterfallMouseDown) {
-        console.log("waterfallMoveListener");
-    }
+    if (!waterfallMouseDown) {
+        return;
+    }       
+
+    console.log("waterfallMoveListener");
+
+    const elementRelativeX = e.offsetX;
+    const elementRelativeY = e.offsetY;
+    const canvasRelativeX = elementRelativeX * waterfallCanvas.width / waterfallCanvas.clientWidth;
+    const canvasRelativeY = elementRelativeY * waterfallCanvas.height / waterfallCanvas.clientHeight;
+
+    let pointForHz = real_samplerate / real_spectrumSamples;
+    let hz = canvasRelativeX * pointForHz + real_frequency;
+    console.log("selected freq", hz);
+    
+    document.getElementById("tuner_width").value = '' + hz;
+
+    spectrumFilterEnd = canvasRelativeX;
+
+    drawFilter();
 }
 
 function waterfallUpListener(e) {
     waterfallMouseDown = false;
     console.log("waterfallUpListener");
+
+    const elementRelativeX = e.offsetX;
+    const elementRelativeY = e.offsetY;
+    const canvasRelativeX = elementRelativeX * waterfallCanvas.width / waterfallCanvas.clientWidth;
+    const canvasRelativeY = elementRelativeY * waterfallCanvas.height / waterfallCanvas.clientHeight;
+
+    let pointForHz = real_samplerate / real_spectrumSamples;
+    let hz = canvasRelativeX * pointForHz + real_frequency;
+    console.log("selected freq", hz);
+    
+    document.getElementById("tuner_width").value = '' + hz;
+
+    spectrumFilterEnd = canvasRelativeX;
+
+    drawFilter();
 }
 
 ////////
@@ -229,14 +312,20 @@ function initialize() {
 
     // Spectrum
     spectrumCanvas = document.getElementById('spectrumCanvas');
-    spectrumCanvas.addEventListener('mousedown', spectrumDownListener)
-    spectrumCanvas.addEventListener('mousemove', spectrumMoveListener)
-    spectrumCanvas.addEventListener('mouseup', spectrumUpListener)
     spectrumCtx = spectrumCanvas.getContext("2d");
+
+    let spectrum = document.getElementById('spectrum');
+    spectrum.addEventListener('mousedown', spectrumDownListener)
+    spectrum.addEventListener('mousemove', spectrumMoveListener)
+    spectrum.addEventListener('mouseup', spectrumUpListener)
 
     // Spectrum grid
     spectrumGridCanvas = document.getElementById('spectrumGridCanvas');
     spectrumGridCtx = spectrumGridCanvas.getContext("2d");
+
+    // Spectrum filter
+    spectrumFilterCanvas = document.getElementById('spectrumFilterCanvas');
+    spectrumFilterCtx = spectrumFilterCanvas.getContext("2d");
 
     // Band
     bandCanvas = document.getElementById('bandCanvas');
@@ -244,10 +333,11 @@ function initialize() {
 
     // Waterfall
     waterfallCanvas = document.getElementById('waterfallCanvas');
+    waterfallCtx = waterfallCanvas.getContext("2d");
+
     waterfallCanvas.addEventListener('mousedown', waterfallDownListener)
     waterfallCanvas.addEventListener('mousemove', waterfallMoveListener)
     waterfallCanvas.addEventListener('mouseup', waterfallUpListener)
-    waterfallCtx = waterfallCanvas.getContext("2d");
 
     // other
     document.getElementById("toggle_sound").disabled = true;
@@ -331,6 +421,48 @@ function drawGrid() {
     spectrumGridCtx.strokeStyle = "black";
     spectrumGridCtx.lineWidth = 0.5;
     spectrumGridCtx.stroke();
+}
+
+function drawFilter() {
+    const bw = spectrumFilterCanvas.clientWidth;
+    const bh = spectrumFilterCanvas.clientHeight;
+
+    // Clear canvas
+    spectrumFilterCtx.clearRect(0, 0, bw, bh);
+
+    if (spectrumFilterStart == null) {
+        return;
+    }
+
+    // Begining of filter
+    spectrumFilterCtx.beginPath();
+    spectrumFilterCtx.moveTo(spectrumFilterStart, 0);
+    spectrumFilterCtx.lineTo(spectrumFilterStart, bh);
+
+    spectrumFilterCtx.strokeStyle = "black";
+    spectrumFilterCtx.lineWidth = 0.5;
+    spectrumFilterCtx.stroke();
+
+    if (spectrumFilterEnd == null) {
+        return;
+    }
+
+    if (spectrumFilterStart == spectrumFilterEnd) {
+        return;
+    }
+
+    // End of filter
+    spectrumFilterCtx.beginPath();
+    spectrumFilterCtx.moveTo(spectrumFilterEnd, 0);
+    spectrumFilterCtx.lineTo(spectrumFilterEnd, bh);
+
+    spectrumFilterCtx.strokeStyle = "black";
+    spectrumFilterCtx.lineWidth = 0.5;
+    spectrumFilterCtx.stroke();
+
+    // Filter area
+    spectrumFilterCtx.fillStyle = "rgba(200,0,0,0.3)";
+    spectrumFilterCtx.fillRect(spectrumFilterStart, 0, spectrumFilterEnd - spectrumFilterStart, bh);
 }
 
 function drawFrequencyBands() {
