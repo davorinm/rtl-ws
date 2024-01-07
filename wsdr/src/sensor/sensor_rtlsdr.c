@@ -26,6 +26,7 @@ typedef struct rtl_dev
     uint32_t f;
     uint32_t fs;
     double gain;
+    uint32_t samples;
 } rtl_dev_t;
 
 static rtl_dev_t *dev = NULL;
@@ -42,7 +43,7 @@ static int sensor_loop(fftw_complex *in_c)
     int retval;
 
     // Refill RX buffer
-    retval = rtlsdr_read_sync(dev->dev, buf, 512, &samples_read);
+    retval = rtlsdr_read_sync(dev->dev, buf, dev->samples, &samples_read);
     if (retval < 0)
     {
         DEBUG("Samples read failed: %d\n", retval);
@@ -108,9 +109,10 @@ int sensor_init()
 
     // Device
     dev = (rtl_dev_t *)calloc(1, sizeof(rtl_dev_t));
+    dev->samples = 512;
 
     // Buffer
-    buf = calloc(1, 512 * sizeof(uint8_t));
+    buf = calloc(1, dev->samples * sizeof(uint8_t));
 
     // Open
     DEBUG("rtlsdr_open...\n");
@@ -243,6 +245,14 @@ int sensor_set_gain(double gain)
         }
     }
     return r;
+}
+
+uint32_t sensor_get_buffer_size() {
+    return 0;
+}
+
+int sensor_set_buffer_size(uint32_t fs) {
+    return 0;
 }
 
 void sensor_start()

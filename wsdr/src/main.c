@@ -34,13 +34,11 @@ int main(int argc, char **argv)
     signal(SIGQUIT, sighandler);
     signal(SIGTERM, sighandler);
 
-    INFO("Initializing spectrum\n");
-    spectrum_init();
-
-    // TODO: Make callback chaining for samples processing
-
     INFO("Initializing sensor\n");
     sensor_init();
+
+    INFO("Initializing spectrum\n");
+    spectrum_init();
 
     INFO("Initializing web service...\n");
     web_init();
@@ -54,11 +52,11 @@ int main(int argc, char **argv)
     INFO("Closing web context\n");
     web_close();
 
-    INFO("Closing sensor\n");
-    sensor_close();
-
     INFO("Closing spectrum\n");
     spectrum_close();
+
+    INFO("Closing sensor\n");
+    sensor_close();
 
     return 0;
 }

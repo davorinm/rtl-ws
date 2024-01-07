@@ -35,8 +35,11 @@
             font-family: "Lucida Console", "Courier New", monospace;
         }
 
-        legend {
+        .controls_input {
+            width: 100px;
         }
+
+        legend {}
 
         tuner {
             margin: 10px 10px 10px 0px;
@@ -46,6 +49,10 @@
             background-color: #636363;
             border: 1px solid grey;
             padding: 10px;
+        }
+
+        .tuner_input {
+            width: 100px;
         }
 
         spectrum {
@@ -132,22 +139,26 @@
             </fieldset>
             <fieldset>
                 <legend>Frequency</legend>
-                <input id="frequency" type="number" size="8" onchange="frequency_change();" value="100000" />
+                <input id="frequency" class="controls_input" type="number" size="8" onchange="frequency_change();"
+                    value="100000" />
                 <span>Hz</span>
             </fieldset>
             <fieldset>
                 <legend>Bandwidth</legend>
-                <input id="bandwidth" type="number" size="8" onchange="bw_change();" value="2048" /> 
+                <input id="bandwidth" class="controls_input" type="number" size="8" onchange="bw_change();"
+                    value="2048" />
                 <span>Hz</span>
             </fieldset>
             <fieldset>
                 <legend>Samplerate</legend>
-                <input id="samplerate" type="number" size="8" onchange="samplerate_change();" value="2048" /> 
+                <input id="samplerate" class="controls_input" type="number" size="8" onchange="samplerate_change();"
+                    value="2048" />
                 <span>Hz</span>
             </fieldset>
             <fieldset>
                 <legend>Gain</legend>
-                <input id="spectrumgain" type="number" size="8" onchange="spectrumgain_change();" value="0" />
+                <input id="spectrumgain" class="controls_input" type="number" size="8" onchange="spectrumgain_change();"
+                    value="0" />
                 <span>dB</span>
             </fieldset>
             <fieldset>
@@ -179,21 +190,21 @@
 
         <tuner>
             <div id="tuner">
-                <input id="tuner_frequency" type="number" min="0" max="5000" step="5"> 
-                <input id="tuner_width" type="number" min="0" max="5000" step="5">
+                <input id="tuner_frequency" class="tuner_input" type="number" min="0" max="5000" step="5">
+                <input id="tuner_width" class="tuner_input" type="number" min="0" max="5000" step="5">
             </div>
-    
+
             <spectrum>
                 <div id="spectrum">
-                    <canvas id="spectrumFilterCanvas" width="2048" height="350"></canvas>
-                    <canvas id="spectrumCanvas" width="2048" height="350"></canvas>
-                    <canvas id="spectrumGridCanvas" width="2048" height="350"></canvas>
+                    <canvas id="spectrumFilterCanvas" width="4096" height="350"></canvas>
+                    <canvas id="spectrumCanvas" width="4096" height="350"></canvas>
+                    <canvas id="spectrumGridCanvas" width="4096" height="350"></canvas>
                 </div>
-                <canvas id="bandCanvas" width="2048" height="64"></canvas>
-                <canvas id="waterfallCanvas" width="2048" height="350"></canvas>
+                <canvas id="bandCanvas" width="4096" height="64"></canvas>
+                <canvas id="waterfallCanvas" width="4096" height="350"></canvas>
             </spectrum>
         </tuner>
-        
+
     </content>
 
     <footer>

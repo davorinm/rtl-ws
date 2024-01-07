@@ -16,7 +16,6 @@
 #include "sensor_pluto_helpers.h"
 #include "../tools/helpers.h"
 #include "../tools/timer.h"
-#include "../settings.h"
 #include "../dsp/spectrum.h"
 
 /* IIO structs required for streaming */
@@ -107,20 +106,16 @@ static void *worker(void *user)
 
 int sensor_init()
 {
-    // Buffer
-    unsigned int buffer_size = PLUTO_SAMPLES_PER_READ;
-
-    // Vals
     int ret;
 
     // RX stream config
-	config.bw_hz = MHZ(10);   // 2 MHz rf bandwidth
-	config.fs_hz = MHZ(10);   // 2.5 MS/s rx sample rate
-	config.lo_hz = MHZ(430); // 2.5 GHz rf frequency
-    config.agc_mode = "slow_attack"; // "manual fast_attack slow_attack hybrid" 
-    config.gain = 60;              // 0 dB gain
-    config.rfport = "A_BALANCED"; // port A (select for rf freq.)
-    // "A_BALANCED B_BALANCED C_BALANCED A_N A_P B_N B_P C_N C_P TX_MONITOR1 TX_MONITOR2 TX_MONITOR1_2" 
+	config.bw_hz = MHZ(10);             // 2 MHz rf bandwidth
+	config.fs_hz = MHZ(10);             // 2.5 MS/s rx sample rate
+	config.lo_hz = MHZ(430);            // 2.5 GHz rf frequency
+    config.agc_mode = "slow_attack";    // "manual fast_attack slow_attack hybrid" 
+    config.gain = 60;                   // 0 dB gain
+    config.rfport = "A_BALANCED";       // port A (select for rf freq.)
+    config.buffer_size = 1024 * 4;      // Device samples buffer size
 
     DEBUG("* Acquiring IIO context\n");
     ctx = iio_create_default_context();
@@ -180,7 +175,7 @@ int sensor_init()
     iio_channel_enable(rx0_q);
 
     DEBUG("* Creating non-cyclic IIO buffers\n");
-    rxbuf = iio_device_create_buffer(rx, buffer_size, false);
+    rxbuf = iio_device_create_buffer(rx, config.buffer_size, false);
     if (rxbuf == NULL)
     {
         DEBUG("Could not create RX buffer");
@@ -256,7 +251,6 @@ int sensor_set_sample_rate(uint32_t fs)
 
 double sensor_get_gain()
 {
-    DEBUG("Sensor gain %2.1f dB\n", config.gain);
     return config.gain;
 }
 
@@ -269,6 +263,25 @@ int sensor_set_gain(double gain)
     }
 
     config.gain = gain;
+
+    DEBUG("* Configuring AD9361 for streaming\n");
+    int ret = cfg_ad9361_rx_stream_ch(ctx, &config, 0);
+
+    return ret;
+}
+
+uint32_t sensor_get_buffer_size() {
+    return config.buffer_size;
+}
+
+int sensor_set_buffer_size(uint32_t bs) {
+    if (config.buffer_size == bs)
+    {
+        DEBUG("Buffer size already set\n");
+        return 0;
+    }
+
+    config.buffer_size = bs;
 
     DEBUG("* Configuring AD9361 for streaming\n");
     int ret = cfg_ad9361_rx_stream_ch(ctx, &config, 0);

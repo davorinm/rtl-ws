@@ -1,18 +1,6 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-// Web port
-#define PORT 8090
-
-// HTML default path
-#define MAIN_HTML "/index.html"
-
-// HTML resources
-#define HTML_PATH "./resources"
-
-// Pluto
-#define PLUTO_SAMPLES_PER_READ 1024 * 16
-
 // Bandwidth
 #define DECIMATED_TARGET_BW_HZ  (44100 * 4)
 

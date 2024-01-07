@@ -1,7 +1,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "ws_handler.h"
+#include "web_socket_handler.h"
+#include "web_handler.h"
 #include "../sensor/sensor.h"
 #include "../dsp/spectrum.h"
 #include "../tools/helpers.h"
@@ -123,7 +124,7 @@ static void ws_update_client(struct mg_connection *c)
     int n = 0, nnn = 0;
 
     // Set meta data
-    n = sprintf(data_buffer, "Tf %u;b %u;s %u;g %lf;y %u", sensor_get_freq(), sensor_get_band_width(), sensor_get_sample_rate(), sensor_get_gain(), PLUTO_SAMPLES_PER_READ);
+    n = sprintf(data_buffer, "Tf %u;b %u;s %u;g %lf;y %u", sensor_get_freq(), sensor_get_band_width(), sensor_get_sample_rate(), sensor_get_gain(), sensor_get_buffer_size());
 
     DEBUG("ws_update_client %s\n", data_buffer);
 
@@ -137,19 +138,100 @@ static void ws_update_client(struct mg_connection *c)
 
 void ws_handler_data(struct mg_connection *c)
 {
+    DEBUG("ws_handler_data\n");
+
+    if (c->fn_data == NULL)
+    {
+        // INFO("No sessin data\n");
+        return;
+    }
+
+    struct per_session_data__rtl_ws *pss = (struct per_session_data__rtl_ws *)c->fn_data;
+
     if (pss->update_client == 1)
     {
+        DEBUG("update_client\n");
         pss->update_client = 0;
         ws_update_client(c);
+        return;
     }
-    
-    if (pss->send_data)
+
+    if (pss->send_data && pss->writable)
     {
         if (spectrum_available())
         {
             ws_update_spectrum(c);
+            return;
+        }
+        else
+        {
+
+            DEBUG("spectrum not available\n");
         }
     }
+    else
+    {
+        DEBUG("send_data = 0\n");
+    }
+}
+
+void web_socket_handler(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
+{
+    if (ev == MG_EV_OPEN)
+    {
+        INFO("MG_EV_OPEN\n");
+        // c->is_hexdumping = 1;
+    }
+    else if (ev == MG_EV_WRITE)
+    {
+        long *bytes_written = (long *)ev_data;
+        DEBUG("MG_EV_WRITE bytes_written: %ld, is_writable %i, is_websocket %i\n", *bytes_written, c->is_writable, c->is_websocket);
+
+        if (c->data[0] == 'W' && c->is_websocket && !c->is_closing)
+        {
+            struct per_session_data__rtl_ws *pss = (struct per_session_data__rtl_ws *)fn_data;
+            pss->writable = c->is_writable;
+
+            INFO("Connection is_writable %i, is_websocket %i\n", c->is_writable, c->is_websocket);
+            ws_handler_data(c);
+        }
+
+        // INFO("Connection is_writable %i\n", c->is_writable);
+        // INFO("Connection is_websocket %i\n", c->is_websocket);
+
+        // if (c->is_writable)
+        // {
+        //     ws_handler_data(c);
+        // }
+    }
+    else if (ev == MG_EV_WS_OPEN)
+    {
+        INFO("MG_EV_WS_OPEN\n");
+        c->data[0] = 'W'; // Mark this connection as an established WS client
+
+        struct per_session_data__rtl_ws *pss = calloc(1, sizeof(struct per_session_data__rtl_ws));
+        pss->update_client = 1;
+        c->fn_data = pss;
+    }
+    else if (ev == MG_EV_WS_MSG)
+    {
+        struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
+        DEBUG("MG_EV_WS_MSG: [%.*s] falgs: %d\n", (int)wm->data.len, wm->data.ptr, wm->flags);
+
+        struct per_session_data__rtl_ws *pss = (struct per_session_data__rtl_ws *)fn_data;
+        ws_handler_callback(c, wm, pss);
+    }
+    else if (ev == MG_EV_WS_CTL)
+    {
+        struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
+        DEBUG("MG_EV_WS_CTL: [%.*s] falgs: %d\n", (int)wm->data.len, wm->data.ptr, wm->flags);
+    }
+    else if (ev == MG_EV_CLOSE)
+    {
+        DEBUG("MG_EV_CLOSE is_websocket %i %c\n", c->is_websocket, c->data[0]);
+    }
+
+    (void)fn_data;
 }
 
 void ws_deinit()

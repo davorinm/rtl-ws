@@ -16,6 +16,7 @@ struct sensor_config {
     const char* agc_mode; // AGC mode - manual, slow_attack, fast_attack
     double gain;
 	const char* rfport; // Port name
+	long long buffer_size;
 };
 
 bool get_ad9361_rx_stream_dev(struct iio_context *ctx, struct iio_device **dev);
