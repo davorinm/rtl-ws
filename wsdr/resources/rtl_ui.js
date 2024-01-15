@@ -7,8 +7,8 @@ let socket_lm;
 let real_frequency = 100000;
 let real_bandwidth = 2048;
 let real_samplerate = 1024;
-let real_spectrumgain = 0;
-let real_spectrumSamples = 0;
+let real_rfgain = 0;
+let real_spectrumSamples = 2048;
 
 let sound_on = false;
 let samplesProcessorNode;
@@ -63,6 +63,7 @@ window.onresize = function (event) {
     initialize();
     drawGrid();
     drawSpectrum();
+    drawFrequencyBands()
     drawWaterfall();
 };
 
@@ -115,38 +116,36 @@ function connect() {
                         let frequency = parseInt(i[1]);
                         if (real_frequency != frequency) {
                             real_frequency = frequency;
-                            let freq_element = document.getElementById("frequency");
-                            freq_element.value = real_frequency;
+                            document.getElementById("frequency").value = real_frequency;
                             redraw_hz_axis = true;
                         }
                     } else if (i[0] == 'b') {
                         let bandwidth = parseInt(i[1]);
                         if (real_bandwidth != bandwidth) {
                             real_bandwidth = bandwidth;
-                            let bw_element = document.getElementById("bandwidth");
-                            bw_element.value = real_bandwidth;
+                            document.getElementById("bandwidth").value = real_bandwidth;
                             redraw_hz_axis = true;
                         }
                     } else if (i[0] == 's') {
                         let samplerate = parseInt(i[1]);
                         if (real_samplerate != samplerate) {
                             real_samplerate = samplerate;
-                            let samplerate_element = document.getElementById("samplerate");
-                            samplerate_element.value = real_samplerate;
+                            document.getElementById("samplerate").value = real_samplerate;
                             redraw_hz_axis = true;
                         }
                     } else if (i[0] == 'g') {
-                        let spectrumgain = parseInt(i[1]);
-                        if (real_spectrumgain != spectrumgain) {
-                            real_spectrumgain = spectrumgain;
-                            let spectrumgain_element = document.getElementById("spectrumgain");
-                            spectrumgain_element.value = real_spectrumgain;
+                        let rfgain = parseInt(i[1]);
+                        if (real_rfgain != rfgain) {
+                            real_rfgain = rfgain;
+                            document.getElementById("rfgain").value = real_rfgain;
                             redraw_hz_axis = true;
                         }
                     } else if (i[0] == 'y') {
                         let spectrumSamples = parseInt(i[1]);
                         if (real_spectrumSamples != spectrumSamples) {
                             real_spectrumSamples = spectrumSamples;
+                            document.getElementById("samples_buffer").innerHTML = real_spectrumSamples;
+                            redraw_hz_axis = true;
                         }
                     }
                 }
@@ -185,6 +184,7 @@ function spectrumDownListener(e) {
 
     let pointForHz = real_samplerate / real_spectrumSamples;
     let hz = canvasRelativeX * pointForHz + real_frequency;
+    hz = Math.round(hz);
     console.log("selected freq", hz);
 
     document.getElementById("tuner_frequency").value = '' + hz;
@@ -209,6 +209,7 @@ function spectrumMoveListener(e) {
 
     let pointForHz = real_samplerate / real_spectrumSamples;
     let hz = canvasRelativeX * pointForHz + real_frequency;
+    hz = Math.round(hz);
     console.log("released freq", hz);
 
     document.getElementById("tuner_width").value = '' + hz;
@@ -229,6 +230,7 @@ function spectrumUpListener(e) {
 
     let pointForHz = real_samplerate / real_spectrumSamples;
     let hz = canvasRelativeX * pointForHz + real_frequency;
+    hz = Math.round(hz);
     console.log("released freq", hz);
     
     document.getElementById("tuner_width").value = '' + hz;
@@ -252,6 +254,7 @@ function waterfallDownListener(e) {
 
     let pointForHz = real_samplerate / real_spectrumSamples;
     let hz = canvasRelativeX * pointForHz + real_frequency;
+    hz = Math.round(hz);
     console.log("selected freq", hz);
 
     document.getElementById("tuner_frequency").value = '' + hz;
@@ -276,6 +279,7 @@ function waterfallMoveListener(e) {
 
     let pointForHz = real_samplerate / real_spectrumSamples;
     let hz = canvasRelativeX * pointForHz + real_frequency;
+    hz = Math.round(hz);
     console.log("selected freq", hz);
     
     document.getElementById("tuner_width").value = '' + hz;
@@ -296,6 +300,7 @@ function waterfallUpListener(e) {
 
     let pointForHz = real_samplerate / real_spectrumSamples;
     let hz = canvasRelativeX * pointForHz + real_frequency;
+    hz = Math.round(hz);
     console.log("selected freq", hz);
     
     document.getElementById("tuner_width").value = '' + hz;
@@ -550,19 +555,24 @@ function frequency_change() {
     socket_lm.send("freq " + frequency);
 }
 
-function bw_change() {
-    let bandwidth = document.getElementById("bandwidth").value;
-    socket_lm.send("bw " + bandwidth);
-}
-
 function samplerate_change() {
     let samplerate = document.getElementById("samplerate").value;
     socket_lm.send("samplerate " + samplerate);
 }
 
-function spectrumgain_change() {
-    let spectrumgain = document.getElementById("spectrumgain").value;
-    socket_lm.send("spectrumgain " + spectrumgain);
+function rfbw_change() {
+    let bandwidth = document.getElementById("bandwidth").value;
+    socket_lm.send("rfbw " + bandwidth);
+}
+
+function rfgain_mode_change() {
+    let gain_mode = document.getElementById("gain_mode").value;
+    socket_lm.send("gain_mode " + gain_mode);
+}
+
+function rfgain_change() {
+    let rfgain = document.getElementById("rfgain").value;
+    socket_lm.send("rfgain " + rfgain);
 }
 
 function start_or_stop() {

@@ -17,15 +17,14 @@
 #include "../settings.h"
 #include "../dsp/spectrum.h"
 
-#define RTL_DEFAULT_DEVICE_INDEX 0
-#define RTL_DEFAULT_GAIN 25.4
-
 typedef struct rtl_dev
 {
     rtlsdr_dev_t *dev;
+    uint32_t device_index;
     uint32_t f;
     uint32_t fs;
     double gain;
+    uint32_t gain_mode;
     uint32_t samples;
 } rtl_dev_t;
 
@@ -85,6 +84,7 @@ static void *worker(void *user)
         if (status < 0)
         {
             ERROR("Read failed with status %d\n", status);
+            continue;
         }
 
         // timer_end(&time, &time_spent);
@@ -105,26 +105,30 @@ static void *worker(void *user)
 int sensor_init()
 {
     int r = 0;
-    DEBUG("rtl_init called with dev == %lx, dev_index == %d\n", (unsigned long)dev, RTL_DEFAULT_DEVICE_INDEX);
 
     // Device
     dev = (rtl_dev_t *)calloc(1, sizeof(rtl_dev_t));
-    dev->samples = 512;
+    dev->device_index = 0;
+    dev->f = 102800000;
+    dev->fs = 2048000;
+    dev->gain_mode = 1;
+    dev->gain = 25;
+    dev->samples = 2048;
 
     // Buffer
     buf = calloc(1, dev->samples * sizeof(uint8_t));
 
     // Open
     DEBUG("rtlsdr_open...\n");
-    r = rtlsdr_open(&dev->dev, RTL_DEFAULT_DEVICE_INDEX);
+    r = rtlsdr_open(&dev->dev, dev->device_index);
     if (r < 0)
     {
-        ERROR("Failed to open rtlsdr device #%d.\n", RTL_DEFAULT_DEVICE_INDEX);
+        ERROR("Failed to open rtlsdr device #%d.\n", dev->device_index);
         return r;
     }
 
     DEBUG("rtl_set_sample_rate...\n");
-    r = sensor_set_sample_rate(RTL_DEFAULT_SAMPLE_RATE);
+    r = sensor_set_sample_rate(dev->fs);
     if (r < 0)
     {
         ERROR("Failed to set sample rate \n");
@@ -132,7 +136,7 @@ int sensor_init()
     }
 
     DEBUG("rtl_set_frequency...\n");
-    r = sensor_set_frequency(RTL_DEFAULT_FREQUENCY);
+    r = sensor_set_frequency(dev->f);
     if (r < 0)
     {
         ERROR("Failed to set frequency \n");
@@ -140,15 +144,15 @@ int sensor_init()
     }
 
     DEBUG("Setting rtl gain mode to manual...\n");
-    r = rtlsdr_set_tuner_gain_mode(dev->dev, 1);
+    r = rtlsdr_set_tuner_gain_mode(dev->dev, dev->gain_mode);
     if (r < 0)
     {
         ERROR("Failed to enable manual gain.\n");
         return r;
     }
 
-    DEBUG("Setting rtl gain to %f...\n", RTL_DEFAULT_GAIN);
-    r = sensor_set_gain(RTL_DEFAULT_GAIN);
+    DEBUG("Setting rtl gain to %f...\n", dev->gain);
+    r = sensor_set_gain(dev->gain);
     if (r < 0)
     {
 
@@ -191,11 +195,12 @@ int sensor_set_frequency(uint32_t f)
     return r;
 }
 
-uint32_t sensor_get_band_width() {
-    return 2000000;
+uint32_t sensor_get_rf_band_width() {
+    return dev->fs;
 }
 
-int sensor_set_band_width(uint32_t bw) {
+int sensor_set_rf_band_width(uint32_t bw) {
+    UNUSED(bw);
     return 0;
 }
 
@@ -218,6 +223,30 @@ int sensor_set_sample_rate(uint32_t fs)
         {
             INFO("Sample rate set to %u Hz.\n", fs);
             dev->fs = fs;
+        }
+    }
+    return r;
+}
+
+uint32_t sensor_get_gain_mode()
+{
+    return dev->gain_mode;
+}
+
+int sensor_set_gain_mode(uint32_t gain_mode)
+{
+    int r = 0;
+    if (dev->gain_mode != gain_mode)
+    {
+        r = rtlsdr_set_tuner_gain_mode(dev->dev, gain_mode);
+        if (r < 0)
+        {
+            ERROR("Failed to set tuner gain mode.\n");
+        }
+        else
+        {
+            INFO("Tuner gain mode set to %i dB.\n", gain_mode);
+            dev->gain_mode = gain_mode;
         }
     }
     return r;
@@ -248,11 +277,7 @@ int sensor_set_gain(double gain)
 }
 
 uint32_t sensor_get_buffer_size() {
-    return 0;
-}
-
-int sensor_set_buffer_size(uint32_t fs) {
-    return 0;
+    return dev->samples;
 }
 
 void sensor_start()
