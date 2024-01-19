@@ -33,6 +33,12 @@ let waterfallCtx;
 let waterfallData = new Array();
 let waterfallMaxData = 350;
 
+let spectrumChartValuesCanvas;
+let spectrumChartValuesCtx;
+
+let spectrumTimeValuesCanvas;
+let spectrumTimeValuesCtx;
+
 var colormap = [];
 for (i = 0; i < 256; i++) {
     if ((i < 43))
@@ -55,6 +61,8 @@ window.onload = function (event) {
     drawSpectrum();
     drawFrequencyBands()
     drawWaterfall();
+    drawSpectrumChartValuesCanvas();
+    drawSpectrumTimeValuesCanvas();
 
     connect();
 };
@@ -65,6 +73,8 @@ window.onresize = function (event) {
     drawSpectrum();
     drawFrequencyBands()
     drawWaterfall();
+    drawSpectrumChartValuesCanvas();
+    drawSpectrumTimeValuesCanvas();
 };
 
 function connect() {
@@ -345,6 +355,14 @@ function initialize() {
     waterfallCanvas.addEventListener('mousemove', waterfallMoveListener)
     waterfallCanvas.addEventListener('mouseup', waterfallUpListener)
 
+    // Spectrum Chart Values
+    spectrumChartValuesCanvas = document.getElementById('spectrumChartValues');
+    spectrumChartValuesCtx = spectrumChartValuesCanvas.getContext("2d");
+
+    // Spectrum Time Values
+    spectrumTimeValuesCanvas = document.getElementById('spectrumTimeValues');
+    spectrumTimeValuesCtx = spectrumTimeValuesCanvas.getContext("2d");
+
     // other
     document.getElementById("toggle_sound").disabled = true;
 }
@@ -507,36 +525,43 @@ function drawFrequencyBands() {
     // Clear canvas
     bandCtx.clearRect(0, 0, bw, bh);
 
-    bandCtx.font = "20px Georgia";
+    bandCtx.font = "16px Georgia";
     bandCtx.fillStyle = "black";
 
     const textVerticalPosition = bh / 2;
 
-    var freqtext = (real_frequency) / 1000000 + " MHz";
-    var w = bandCtx.measureText(freqtext).width;
+    let freq = ((real_frequency) / 1000000).toFixed(2);
+    let freqtext = freq + " MHz";
+    let w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, 0, textVerticalPosition);
 
-    freqtext = (real_frequency + real_bandwidth / 6 * 1) / 1000000 + " MHz";
+    freq = ((real_frequency + real_bandwidth / 6 * 1) / 1000000).toFixed(2);
+    freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, (bw / 6 * 1) - (w / 2), textVerticalPosition);
 
-    freqtext = (real_frequency + real_bandwidth / 6 * 2) / 1000000 + " MHz";
+    freq = ((real_frequency + real_bandwidth / 6 * 2) / 1000000).toFixed(2);
+    freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, (bw / 6 * 2) - (w / 2), textVerticalPosition);
 
-    freqtext = (real_frequency + real_bandwidth / 2) / 1000000 + " MHz";
+    freq = ((real_frequency + real_bandwidth / 2) / 1000000).toFixed(2);
+    freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, (bw / 2) - (w / 2), textVerticalPosition);
 
-    freqtext = (real_frequency + real_bandwidth / 6 * 4) / 1000000 + " MHz";
+    freq = ((real_frequency + real_bandwidth / 6 * 4) / 1000000).toFixed(2);
+    freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, (bw / 6 * 4) - (w / 2), textVerticalPosition);
 
-    freqtext = (real_frequency + real_bandwidth / 6 * 5) / 1000000 + " MHz";
+    freq = ((real_frequency + real_bandwidth / 6 * 5) / 1000000).toFixed(2);
+    freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, (bw / 6 * 5) - (w / 2), textVerticalPosition);
 
-    freqtext = (real_frequency + real_bandwidth) / 1000000 + " MHz";
+    freq = ((real_frequency + real_bandwidth) / 1000000).toFixed(2);
+    freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, bw - w, textVerticalPosition);
 }
@@ -580,6 +605,61 @@ function drawWaterfall() {
     }
 
     waterfallCtx.putImageData(waterfallImage, 0, 0);
+}
+
+function drawSpectrumChartValuesCanvas() {
+    const bw = spectrumChartValuesCanvas.clientWidth;
+    const bh = spectrumChartValuesCanvas.clientHeight;
+
+    // Setup canvas
+    spectrumChartValuesCanvas.width = bw;
+    spectrumChartValuesCanvas.height = bh;
+
+    // Clear canvas
+    spectrumChartValuesCtx.clearRect(0, 0, bw, bh);
+
+    // Draw title
+
+
+    spectrumChartValuesCtx.fillStyle = 'black';
+
+    spectrumChartValuesCtx.save();
+    spectrumChartValuesCtx.translate(0, 100);
+    spectrumChartValuesCtx.rotate(-Math.PI/2);
+    spectrumChartValuesCtx.textAlign = "center";
+    spectrumChartValuesCtx.fillText("Power (dBm)", 0, 20);
+    spectrumChartValuesCtx.restore();
+
+    //
+
+    spectrumChartValuesCtx.fillText("123", 0, 50);
+    spectrumChartValuesCtx.fillText("123", 0, 100);
+    spectrumChartValuesCtx.fillText("123", 0, 150);
+    spectrumChartValuesCtx.fillText("123", 0, 200);
+    spectrumChartValuesCtx.fillText("123", 0, 250);
+}
+
+function drawSpectrumTimeValuesCanvas() {
+    const bw = spectrumTimeValuesCanvas.clientWidth;
+    const bh = spectrumTimeValuesCanvas.clientHeight;
+
+    // Setup canvas
+    spectrumTimeValuesCanvas.width = bw;
+    spectrumTimeValuesCanvas.height = bh;
+
+    // Clear canvas
+    spectrumTimeValuesCtx.clearRect(0, 0, bw, bh);
+
+
+    
+    spectrumTimeValuesCtx.fillStyle = 'black';
+
+    spectrumTimeValuesCtx.save();
+    spectrumTimeValuesCtx.translate(0, 100);
+    spectrumTimeValuesCtx.rotate(-Math.PI/2);
+    spectrumTimeValuesCtx.textAlign = "center";
+    spectrumTimeValuesCtx.fillText("Time", 0, 20);
+    spectrumTimeValuesCtx.restore();
 }
 
 async function resizeImageData(imageData, width, height) {
