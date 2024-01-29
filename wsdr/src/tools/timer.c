@@ -5,6 +5,7 @@
 #include <math.h>  /* sqrt */
 
 #include "timer.h"
+#include "helpers.h"
 
 #define BILLION  1000000000.0
 
@@ -95,4 +96,8 @@ void timer_end(struct timespec *begin, double *time_spent) {
 
     // time_spent = end - start
     *time_spent = (end.tv_sec - begin->tv_sec) + (end.tv_nsec - begin->tv_nsec) / BILLION;
+}
+
+void timer_log(char * key, double timeValue) {
+    DEBUG("Time elpased for %s is %f seconds\n", key, timeValue);
 }

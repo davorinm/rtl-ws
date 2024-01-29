@@ -3,7 +3,6 @@ let started = false;
 let last_x = 0, last_y = 0;
 let socket_lm;
 
-
 let real_frequency = 100000;
 let real_bandwidth = 2048;
 let real_samplerate = 1024;
@@ -14,10 +13,12 @@ let sound_on = false;
 let samplesProcessorNode;
 let audioContext;
 
+let spectrumRange = [5, -105];
+
 let spectrumFilterCanvas;
 let spectrumFilterCtx;
-let spectrumFilterStart;
-let spectrumFilterEnd;
+let spectrumFilterStartHz;
+let spectrumFilterWidthHz;
 
 let spectrumCanvas;
 let spectrumCtx;
@@ -184,24 +185,23 @@ function connect() {
 let spectrumMouseDown = false;
 
 function spectrumDownListener(e) {
+    if (spectrumMouseDown) {
+        return;
+    }
+
     spectrumMouseDown = true;
 
     const elementRelativeX = e.offsetX;
-    const elementRelativeY = e.offsetY;
-    const canvasRelativeX = elementRelativeX * spectrumCanvas.width / spectrumCanvas.clientWidth;
-    const canvasRelativeY = elementRelativeY * spectrumCanvas.height / spectrumCanvas.clientHeight;
 
-    console.log("downListener", "elementRelativeX", elementRelativeX, "elementRelativeY", elementRelativeY, "canvasRelativeX", canvasRelativeX, "canvasRelativeY", canvasRelativeY);
+    const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
+    const selected_freq = real_samplerate * selectedProportion;
+    const filter_freq = selected_freq + real_frequency;
 
-    let pointForHz = real_samplerate / real_spectrumSamples;
-    let hz = canvasRelativeX * pointForHz + real_frequency;
-    hz = Math.round(hz);
-    console.log("selected freq", hz);
+    spectrumFilterStartHz = filter_freq;
+    spectrumFilterWidthHz = null;
 
-    document.getElementById("tuner_frequency").value = '' + hz;
-
-    spectrumFilterStart = elementRelativeX;
-    spectrumFilterEnd = null;
+    document.getElementById("tuner_frequency").value = '' + Math.round(spectrumFilterStartHz);
+    document.getElementById("tuner_filter_width").value = '';
 
     drawFilter();
 }
@@ -211,42 +211,35 @@ function spectrumMoveListener(e) {
         return;
     }
 
-    console.log("spectrumMoveListener");
-
     const elementRelativeX = e.offsetX;
-    const elementRelativeY = e.offsetY;
-    const canvasRelativeX = elementRelativeX * spectrumCanvas.width / spectrumCanvas.clientWidth;
-    const canvasRelativeY = elementRelativeY * spectrumCanvas.height / spectrumCanvas.clientHeight;
 
-    let pointForHz = real_samplerate / real_spectrumSamples;
-    let hz = canvasRelativeX * pointForHz + real_frequency;
-    hz = Math.round(hz);
-    console.log("released freq", hz);
+    const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
+    const selected_freq = real_samplerate * selectedProportion;
+    const filter_freq = selected_freq + real_frequency;
 
-    document.getElementById("tuner_width").value = '' + hz;
+    spectrumFilterWidthHz = filter_freq - spectrumFilterStartHz;
 
-    spectrumFilterEnd = elementRelativeX;
+    if (spectrumFilterWidthHz != 0) {
+        document.getElementById("tuner_filter_width").value = '' + Math.round(spectrumFilterWidthHz);
+    }
 
     drawFilter();
 }
 
 function spectrumUpListener(e) {
     spectrumMouseDown = false;
-    console.log("spectrumUpListener");
 
     const elementRelativeX = e.offsetX;
-    const elementRelativeY = e.offsetY;
-    const canvasRelativeX = elementRelativeX * spectrumCanvas.width / spectrumCanvas.clientWidth;
-    const canvasRelativeY = elementRelativeY * spectrumCanvas.height / spectrumCanvas.clientHeight;
 
-    let pointForHz = real_samplerate / real_spectrumSamples;
-    let hz = canvasRelativeX * pointForHz + real_frequency;
-    hz = Math.round(hz);
-    console.log("released freq", hz);
-    
-    document.getElementById("tuner_width").value = '' + hz;
+    const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
+    const selected_freq = real_samplerate * selectedProportion;
+    const filter_freq = selected_freq + real_frequency;
 
-    spectrumFilterEnd = elementRelativeX;
+    spectrumFilterWidthHz = filter_freq - spectrumFilterStartHz;
+
+    if (spectrumFilterWidthHz != 0) {
+        document.getElementById("tuner_filter_width").value = '' + Math.round(spectrumFilterWidthHz);
+    }
 
     drawFilter();
 }
@@ -256,22 +249,23 @@ function spectrumUpListener(e) {
 let waterfallMouseDown = false;
 
 function waterfallDownListener(e) {
+    if (waterfallMouseDown) {
+        return;
+    }
+
     waterfallMouseDown = true;
 
     const elementRelativeX = e.offsetX;
-    const elementRelativeY = e.offsetY;
-    const canvasRelativeX = elementRelativeX * waterfallCanvas.width / waterfallCanvas.clientWidth;
-    const canvasRelativeY = elementRelativeY * waterfallCanvas.height / waterfallCanvas.clientHeight;
 
-    let pointForHz = real_samplerate / real_spectrumSamples;
-    let hz = canvasRelativeX * pointForHz + real_frequency;
-    hz = Math.round(hz);
-    console.log("selected freq", hz);
+    const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
+    const selected_freq = real_samplerate * selectedProportion;
+    const filter_freq = selected_freq + real_frequency;
 
-    document.getElementById("tuner_frequency").value = '' + hz;
+    spectrumFilterStartHz = filter_freq;
+    spectrumFilterWidthHz = null;
 
-    spectrumFilterStart = canvasRelativeX;
-    spectrumFilterEnd = null;
+    document.getElementById("tuner_frequency").value = '' + Math.round(spectrumFilterStartHz);
+    document.getElementById("tuner_filter_width").value = '';
 
     drawFilter();
 }
@@ -279,44 +273,37 @@ function waterfallDownListener(e) {
 function waterfallMoveListener(e) {
     if (!waterfallMouseDown) {
         return;
-    }       
-
-    console.log("waterfallMoveListener");
+    }
 
     const elementRelativeX = e.offsetX;
-    const elementRelativeY = e.offsetY;
-    const canvasRelativeX = elementRelativeX * waterfallCanvas.width / waterfallCanvas.clientWidth;
-    const canvasRelativeY = elementRelativeY * waterfallCanvas.height / waterfallCanvas.clientHeight;
 
-    let pointForHz = real_samplerate / real_spectrumSamples;
-    let hz = canvasRelativeX * pointForHz + real_frequency;
-    hz = Math.round(hz);
-    console.log("selected freq", hz);
-    
-    document.getElementById("tuner_width").value = '' + hz;
+    const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
+    const selected_freq = real_samplerate * selectedProportion;
+    const filter_freq = selected_freq + real_frequency;
 
-    spectrumFilterEnd = canvasRelativeX;
+    spectrumFilterWidthHz = filter_freq - spectrumFilterStartHz;
+
+    if (spectrumFilterWidthHz != 0) {
+        document.getElementById("tuner_filter_width").value = '' + Math.round(spectrumFilterWidthHz);
+    }
 
     drawFilter();
 }
 
 function waterfallUpListener(e) {
     waterfallMouseDown = false;
-    console.log("waterfallUpListener");
-
-    const elementRelativeX = e.offsetX;
-    const elementRelativeY = e.offsetY;
-    const canvasRelativeX = elementRelativeX * waterfallCanvas.width / waterfallCanvas.clientWidth;
-    const canvasRelativeY = elementRelativeY * waterfallCanvas.height / waterfallCanvas.clientHeight;
-
-    let pointForHz = real_samplerate / real_spectrumSamples;
-    let hz = canvasRelativeX * pointForHz + real_frequency;
-    hz = Math.round(hz);
-    console.log("selected freq", hz);
     
-    document.getElementById("tuner_width").value = '' + hz;
+    const elementRelativeX = e.offsetX;
 
-    spectrumFilterEnd = canvasRelativeX;
+    const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
+    const selected_freq = real_samplerate * selectedProportion;
+    const filter_freq = selected_freq + real_frequency;
+
+    spectrumFilterWidthHz = filter_freq - spectrumFilterStartHz;
+
+    if (spectrumFilterWidthHz != 0) {
+        document.getElementById("tuner_filter_width").value = '' + Math.round(spectrumFilterWidthHz);
+    }
 
     drawFilter();
 }
@@ -363,7 +350,38 @@ function initialize() {
     spectrumTimeValuesCanvas = document.getElementById('spectrumTimeValues');
     spectrumTimeValuesCtx = spectrumTimeValuesCanvas.getContext("2d");
 
-    // other
+    // Elements events
+    let connection_button_element = document.getElementById('connection_button');
+    connection_button_element.addEventListener("click", connect);
+
+    let start_or_stop_element = document.getElementById('start_or_stop');
+    start_or_stop_element.addEventListener("click", start_or_stop);
+    
+    let tuner_frequency_element = document.getElementById('tuner_frequency');
+    tuner_frequency_element.addEventListener("input", tuner_frequency_change);
+
+    let tuner_filter_width_element = document.getElementById('tuner_filter_width');
+    tuner_filter_width_element.addEventListener("input", tuner_filter_width_change);
+
+    let frequency_element = document.getElementById('frequency');
+    frequency_element.addEventListener("input", frequency_change);
+
+    let samplerate_element = document.getElementById('samplerate');
+    samplerate_element.addEventListener("input", samplerate_change);
+
+    let bandwidth_element = document.getElementById('bandwidth');
+    bandwidth_element.addEventListener("input", rfbw_change);
+
+    let gain_mode_element = document.getElementById('gain_mode');
+    gain_mode_element.addEventListener("change", rfgain_mode_change);
+
+    let rfgain_element = document.getElementById('rfgain');
+    rfgain_element.addEventListener("change", rfgain_change);
+
+    let toggle_sound_element = document.getElementById('toggle_sound');
+    toggle_sound_element.addEventListener("click", toggle_sound);
+
+    // Initial values
     document.getElementById("toggle_sound").disabled = true;
 }
 
@@ -388,10 +406,12 @@ function get_appropriate_ws_url() {
 function drawSpectrum() {
     const bw = spectrumCanvas.clientWidth;
     const bh = spectrumCanvas.clientHeight;
+    const scale = window.devicePixelRatio;
 
     // Setup canvas
-    spectrumCanvas.width = bw;
-    spectrumCanvas.height = bh;
+    spectrumCanvas.width = Math.floor(bw * scale);
+    spectrumCanvas.height = Math.floor(bh * scale);
+    spectrumCtx.scale(scale, scale);
 
     // Clear canvas
     spectrumCtx.clearRect(0, 0, bw, bh);
@@ -415,7 +435,7 @@ function drawSpectrum() {
     let spectrumCtxPosHorizontal = 0
     for (var idx = 0; idx < dataCount; idx++) {
         const value = waterfallData[0][idx];
-        const yPos = -value;
+        const yPos = mapToSpectrumRange(value, bh);
         if (idx == 0) {
             spectrumCtx.moveTo(0, yPos);
         }
@@ -427,13 +447,33 @@ function drawSpectrum() {
     spectrumCtx.closePath();
 }
 
+// 0 ... -100dBm to 0 ... 230px
+// Map dBm to px
+function mapToSpectrumRange(value, canvasHeight) {
+    const minRange = spectrumRange[0];
+    const maxRange = spectrumRange[1];
+
+    if (minRange < maxRange) {
+        return null;
+    }
+
+    let range = maxRange - minRange;
+
+    let mul = canvasHeight / range;
+    let result = (value - minRange) * mul;
+
+    return result;
+}
+
 function drawGrid() {
     const bw = spectrumGridCanvas.clientWidth;
     const bh = spectrumGridCanvas.clientHeight;
+    const scale = window.devicePixelRatio;
 
     // Setup canvas
-    spectrumGridCanvas.width = bw;
-    spectrumGridCanvas.height = bh;
+    spectrumGridCanvas.width = Math.floor(bw * scale);
+    spectrumGridCanvas.height = Math.floor(bh * scale);
+    spectrumGridCtx.scale(scale, scale);
 
     // Clear canvas
     spectrumGridCtx.clearRect(0, 0, bw, bh);
@@ -446,7 +486,7 @@ function drawGrid() {
     // Vertical lines
     const verticalDiv = 6;
     for (var div = 0; div <= verticalDiv; div++) {
-        let point = bw * (div/verticalDiv);
+        let point = bw * (div / verticalDiv);
         if (point == 0) {
             point = 1;
         }
@@ -455,14 +495,13 @@ function drawGrid() {
     }
 
     // Horizontal lines
-    const horizontalDiv = 10;
-    for (var div = 0; div <= horizontalDiv; div++) {
-        let point = bh * (div/horizontalDiv);
-        if (point == 0) {
-            point = 1;
+    for (var i = spectrumRange[0]; i >= spectrumRange[1]; i--) {
+        if (i % 10 != 0) {
+            continue
         }
-        spectrumGridCtx.moveTo(0, point);
-        spectrumGridCtx.lineTo(bw, point);
+        let y = mapToSpectrumRange(i, bh);
+        spectrumGridCtx.moveTo(0, y);
+        spectrumGridCtx.lineTo(bw, y);
     }
 
     spectrumGridCtx.stroke();
@@ -471,10 +510,12 @@ function drawGrid() {
 function drawFilter() {
     const bw = spectrumFilterCanvas.clientWidth;
     const bh = spectrumFilterCanvas.clientHeight;
+    const scale = window.devicePixelRatio;
 
     // Setup canvas
-    spectrumFilterCanvas.width = bw;
-    spectrumFilterCanvas.height = bh;
+    spectrumFilterCanvas.width = Math.floor(bw * scale);
+    spectrumFilterCanvas.height = Math.floor(bh * scale);
+    spectrumFilterCtx.scale(scale, scale);
 
     // Clear canvas
     spectrumFilterCtx.clearRect(0, 0, bw, bh);
@@ -483,10 +524,10 @@ function drawFilter() {
         return;
     }
 
-    // Begining of filter
+    // Draw begining of filter
     spectrumFilterCtx.beginPath();
-    spectrumFilterCtx.moveTo(spectrumFilterStart, 0);
-    spectrumFilterCtx.lineTo(spectrumFilterStart, bh);
+    spectrumFilterCtx.moveTo(spectrumFilterStartPx, 0);
+    spectrumFilterCtx.lineTo(spectrumFilterStartPx, bh);
 
     spectrumFilterCtx.strokeStyle = "black";
     spectrumFilterCtx.lineWidth = 0.5;
@@ -496,14 +537,15 @@ function drawFilter() {
         return;
     }
 
-    if (spectrumFilterStart == spectrumFilterEnd) {
+    // If start and stop are same dismiss drawing
+    if (spectrumFilterStartPx == spectrumFilterEndPx) {
         return;
     }
 
-    // End of filter
+    // Draw end of filter
     spectrumFilterCtx.beginPath();
-    spectrumFilterCtx.moveTo(spectrumFilterEnd, 0);
-    spectrumFilterCtx.lineTo(spectrumFilterEnd, bh);
+    spectrumFilterCtx.moveTo(spectrumFilterEndPx, 0);
+    spectrumFilterCtx.lineTo(spectrumFilterEndPx, bh);
 
     spectrumFilterCtx.strokeStyle = "black";
     spectrumFilterCtx.lineWidth = 0.5;
@@ -511,16 +553,18 @@ function drawFilter() {
 
     // Filter area
     spectrumFilterCtx.fillStyle = "rgba(200,0,0,0.3)";
-    spectrumFilterCtx.fillRect(spectrumFilterStart, 0, spectrumFilterEnd - spectrumFilterStart, bh);
+    spectrumFilterCtx.fillRect(spectrumFilterStartPx, 0, spectrumFilterEndPx - spectrumFilterStartPx, bh);
 }
 
 function drawFrequencyBands() {
     const bw = bandCanvas.clientWidth;
     const bh = bandCanvas.clientHeight;
+    const scale = window.devicePixelRatio;
 
     // Setup canvas
-    bandCanvas.width = bw;
-    bandCanvas.height = bh;
+    bandCanvas.width = Math.floor(bw * scale);
+    bandCanvas.height = Math.floor(bh * scale);
+    bandCtx.scale(scale, scale);
 
     // Clear canvas
     bandCtx.clearRect(0, 0, bw, bh);
@@ -610,55 +654,53 @@ function drawWaterfall() {
 function drawSpectrumChartValuesCanvas() {
     const bw = spectrumChartValuesCanvas.clientWidth;
     const bh = spectrumChartValuesCanvas.clientHeight;
+    const scale = window.devicePixelRatio;
 
     // Setup canvas
-    spectrumChartValuesCanvas.width = bw;
-    spectrumChartValuesCanvas.height = bh;
+    spectrumChartValuesCanvas.width = Math.floor(bw * scale);
+    spectrumChartValuesCanvas.height = Math.floor(bh * scale);
+    spectrumChartValuesCtx.scale(scale, scale);
 
     // Clear canvas
     spectrumChartValuesCtx.clearRect(0, 0, bw, bh);
 
     // Draw title
-
-
-    spectrumChartValuesCtx.fillStyle = 'black';
-
     spectrumChartValuesCtx.save();
-    spectrumChartValuesCtx.translate(0, 100);
-    spectrumChartValuesCtx.rotate(-Math.PI/2);
+    spectrumChartValuesCtx.rotate(-Math.PI / 2);
     spectrumChartValuesCtx.textAlign = "center";
-    spectrumChartValuesCtx.fillText("Power (dBm)", 0, 20);
+    spectrumChartValuesCtx.fillText("Power (dBm)", -(bh/2), 17);
     spectrumChartValuesCtx.restore();
 
-    //
+    // Draw values
+    spectrumChartValuesCtx.textAlign = "right";
+    for (var i = spectrumRange[0]; i >= spectrumRange[1]; i--) {
+        if (i % 10 != 0) {
+            continue
+        }
 
-    spectrumChartValuesCtx.fillText("123", 0, 50);
-    spectrumChartValuesCtx.fillText("123", 0, 100);
-    spectrumChartValuesCtx.fillText("123", 0, 150);
-    spectrumChartValuesCtx.fillText("123", 0, 200);
-    spectrumChartValuesCtx.fillText("123", 0, 250);
+        let y = mapToSpectrumRange(i, bh);
+        spectrumChartValuesCtx.fillText("" + i, bw - 5, y+2);
+    }
 }
 
 function drawSpectrumTimeValuesCanvas() {
     const bw = spectrumTimeValuesCanvas.clientWidth;
     const bh = spectrumTimeValuesCanvas.clientHeight;
+    const scale = window.devicePixelRatio;
 
     // Setup canvas
-    spectrumTimeValuesCanvas.width = bw;
-    spectrumTimeValuesCanvas.height = bh;
+    spectrumTimeValuesCanvas.width = Math.floor(bw * scale);
+    spectrumTimeValuesCanvas.height = Math.floor(bh * scale);
+    spectrumTimeValuesCtx.scale(scale, scale);
 
     // Clear canvas
     spectrumTimeValuesCtx.clearRect(0, 0, bw, bh);
 
-
-    
-    spectrumTimeValuesCtx.fillStyle = 'black';
-
+    // Draw title
     spectrumTimeValuesCtx.save();
-    spectrumTimeValuesCtx.translate(0, 100);
-    spectrumTimeValuesCtx.rotate(-Math.PI/2);
+    spectrumTimeValuesCtx.rotate(-Math.PI / 2);
     spectrumTimeValuesCtx.textAlign = "center";
-    spectrumTimeValuesCtx.fillText("Time", 0, 20);
+    spectrumTimeValuesCtx.fillText("Time", -(bh/2), 17);
     spectrumTimeValuesCtx.restore();
 }
 
@@ -676,6 +718,8 @@ async function resizeImageData(imageData, width, height) {
     ctx.drawImage(ibm, 0, 0)
     return ctx.getImageData(0, 0, resizeWidth, resizeHeight)
 }
+
+/// Actions
 
 function frequency_change() {
     let frequency = document.getElementById("frequency").value;
@@ -751,7 +795,7 @@ function demo() {
     for (j = 0; j < 350; j++) {
         const sineWaveArray = new Int8Array(real_spectrumSamples);
         for (i = 0; i < sineWaveArray.length; i++) {
-            let t = (Math.sin(i * Math.PI * 2 / hz) - 1.1) * 50;  // 0...-100
+            let t = (Math.sin(i * Math.PI * 2 / hz) - 1.5) * 35;  // 0...-100
             sineWaveArray[i] = t;
         }
         waterfallData.unshift(sineWaveArray);
@@ -761,4 +805,20 @@ function demo() {
     drawGrid();
     drawSpectrum();
     drawWaterfall();
+}
+
+function tuner_frequency_change() {
+    let value = document.getElementById("tuner_frequency").value;
+
+    spectrumFilterStartHz = parseInt(value);
+
+    drawFilter();
+}
+
+function tuner_filter_width_change() {
+    let value = document.getElementById("tuner_filter_width").value;
+
+    spectrumFilterWidthHz = parseInt(value);
+
+    drawFilter();
 }

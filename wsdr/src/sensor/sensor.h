@@ -1,6 +1,7 @@
 #ifndef SIGNAL_SOURCE_H
 #define SIGNAL_SOURCE_H
 
+#include <stdint.h>
 #include <fftw3.h>
 
 int sensor_init();

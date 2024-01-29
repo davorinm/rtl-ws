@@ -112,7 +112,7 @@ int sensor_init()
 	config.bw_hz = MHZ(10);             // 2 MHz rf bandwidth
 	config.fs_hz = MHZ(10);             // 2.5 MS/s rx sample rate
 	config.lo_hz = MHZ(430);            // 2.5 GHz rf frequency
-    config.agc_mode = "slow_attack";    // "manual fast_attack slow_attack hybrid" 
+    config.gain_mode = 0;               // "manual fast_attack slow_attack hybrid" 
     config.gain = 60;                   // 0 dB gain
     config.rfport = "A_BALANCED";       // port A (select for rf freq.)
     config.buffer_size = 1024 * 4;      // Device samples buffer size

@@ -273,7 +273,7 @@ void web_init()
     INFO("Starting WS listener on %s/websocket\n", WEB_ADDRESS);
 
     // Timer worker for ws
-    mg_timer_add(&mgr, 200, MG_TIMER_REPEAT, timer_fn, &mgr);
+    mg_timer_add(&mgr, 100, MG_TIMER_REPEAT, timer_fn, &mgr);
 
     // Create HTTP listener
     mg_http_listen(&mgr, WEB_ADDRESS, fn, NULL);
@@ -281,8 +281,8 @@ void web_init()
 
 void web_poll()
 {
-    // mongoose loop
-    mg_mgr_poll(&mgr, 500);
+    // mongoose loop, delay in ms if nothing to do
+    mg_mgr_poll(&mgr, 10);
 }
 
 void web_close()
