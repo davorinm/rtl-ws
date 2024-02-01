@@ -86,7 +86,7 @@ function connect() {
         console.log("WebSocket instantiated");
 
         socket_lm.onopen = function () {
-            document.getElementById("ws_status").src = "connect2.png";
+            document.getElementById("connection_button").textContent = "Disconnect";
         }
 
         socket_lm.onmessage = function got_packet(msg) {
@@ -169,11 +169,11 @@ function connect() {
         }
 
         socket_lm.onclose = function () {
-            document.getElementById("ws_status").src = "connect2_close.png";
+            document.getElementById("connection_button").textContent = "Connect";
         }
 
         socket_lm.onerror = function () {
-            document.getElementById("ws_status").src = "connect2_close.png";
+            document.getElementById("connection_button").textContent = "Connect";
         }
     } catch (e) {
         console.error('Sorry, the web socket at "%s" is un-available', url);
@@ -749,14 +749,14 @@ function rfgain_change() {
 function start_or_stop() {
     console.log("start_or_stop");
 
-    let value = document.getElementById("start_or_stop").value;
+    let value = document.getElementById("start_or_stop").textContent;
     socket_lm.send(value);
     if (value == "start") {
         started = true;
-        document.getElementById("start_or_stop").value = "stop";
+        document.getElementById("start_or_stop").textContent = "stop";
     } else {
         started = false;
-        document.getElementById("start_or_stop").value = "start";
+        document.getElementById("start_or_stop").textContent = "start";
     }
 
     // Toggle Audio button

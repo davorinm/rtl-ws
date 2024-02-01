@@ -7,8 +7,7 @@
 #include "timer.h"
 #include "helpers.h"
 
-#define BILLION  1000000000.0
-
+#define BILLION 1000000000.0
 
 static double work2()
 {
@@ -39,7 +38,7 @@ void time_test_1(void)
 
     printf("Result: %f\n", sum);
 
-    double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC * 1000;
+    double cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC * 1000;
     printf("Time1 measured: %f ms to execute \n", cpu_time_used);
     printf("Time1 measured: %lu, %lu, %lu \n", end, start, CLOCKS_PER_SEC);
 }
@@ -86,11 +85,13 @@ void time_test_3(void)
     printf("Time3 measured: %lds %ldns \n", seconds, nanoseconds);
 }
 
-void timer_start(struct timespec *begin) {
+void timer_start(struct timespec *begin)
+{
     clock_gettime(CLOCK_REALTIME, begin);
 }
 
-void timer_end(struct timespec *begin, double *time_spent) {
+void timer_end(struct timespec *begin, double *time_spent)
+{
     struct timespec end;
     clock_gettime(CLOCK_REALTIME, &end);
 

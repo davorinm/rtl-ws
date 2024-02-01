@@ -14,6 +14,8 @@ void timer_start(struct timespec *begin);
 
 void timer_end(struct timespec *begin, double *time_spent);
 
+double timer_avg(char *key);
+
 void timer_log(char * key, double timeValue);
 
 #endif
