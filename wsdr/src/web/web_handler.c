@@ -242,7 +242,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
     }
 }
 
-static void timer_fn(void *arg)
+static void ws_timer_fn(void *arg)
 {
     struct mg_mgr *mgr = (struct mg_mgr *)arg;
     // Broadcast "hi" message to all connected websocket clients.
