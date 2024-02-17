@@ -67,15 +67,15 @@ static void *worker(void *user)
 {
     UNUSED(user);
 
-    // struct timespec time;
-    // double time_spent;
+    struct timespec time;
+    double time_spent;
 
     int status = 0;
     DEBUG("Reading signal from sensor\n");
 
     while (running)
     {
-        // timer_start(&time);
+        timer_start(&time);
 
         /// Pointer to fft data
         fftw_complex *in_c = spectrum_data_input();
@@ -87,14 +87,15 @@ static void *worker(void *user)
             continue;
         }
 
-        // timer_end(&time, &time_spent);
-        // DEBUG("Time elpased gathering is %f seconds\n", time_spent);
+        timer_end(&time, &time_spent);
+        timer_log("GATHERING", time_spent);
 
-        // timer_start(&time);
+        timer_start(&time);
+        
         spectrum_process();
 
-        // timer_end(&time, &time_spent);
-        // DEBUG("Time elpased processing is %f seconds\n", time_spent);
+        timer_end(&time, &time_spent);
+        timer_log("PROCESSING", time_spent);
     }
 
     DEBUG("Done reading signal from sensor\n");

@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <unistd.h>
 
+#include "dsp/dsp.h"
 #include "tools/helpers.h"
 #include "web/web_handler.h"
 #include "sensor/sensor.h"
@@ -37,8 +38,8 @@ int main(int argc, char **argv)
     INFO("Initializing sensor\n");
     sensor_init();
 
-    INFO("Initializing spectrum\n");
-    spectrum_init();
+    INFO("Initializing dsp\n");
+    dsp_init();
 
     INFO("Initializing web service...\n");
     web_init();
@@ -52,8 +53,8 @@ int main(int argc, char **argv)
     INFO("Closing web context\n");
     web_close();
 
-    INFO("Closing spectrum\n");
-    spectrum_close();
+    INFO("Closing dsp\n");
+    dsp_close();
 
     INFO("Closing sensor\n");
     sensor_close();

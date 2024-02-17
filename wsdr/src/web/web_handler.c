@@ -4,9 +4,10 @@
 #include <string.h>
 #include <stdio.h>
 #include "../sensor/sensor.h"
-#include "../dsp/spectrum.h"
+#include "../dsp/dsp.h"
 #include "../settings.h"
 #include "../tools/helpers.h"
+#include "../tools/timer.h"
 #include "../mongoose/mongoose.h"
 
 // WS buffer size
@@ -49,14 +50,70 @@ static void ws_update_spectrum(struct mg_connection *c)
 {
     int n = 0, nn = 0, nnn = 0;
 
+    struct timespec time;
+    double time_spent;
+
     // Set meta data
     n = sprintf(ws_data_buffer, "S");
 
+    timer_start(&time);
+
     // Write spectrum
-    nn = spectrum_payload(ws_data_buffer + n, WS_BUFFER_SIZE - n);
+    nn = dsp_spectrum_get_payload(ws_data_buffer + n, WS_BUFFER_SIZE - n);
+
+    timer_end(&time, &time_spent);
+    timer_log("PAYLOAD", time_spent);
+
+    timer_start(&time);
 
     // Send data
     nnn = mg_ws_send(c, ws_data_buffer, n + nn, WEBSOCKET_OP_BINARY);
+    if (nnn < 0)
+    {
+        ERROR("Writing failed, error code == %d\n", nnn);
+    }
+
+    timer_end(&time, &time_spent);
+    timer_log("SENDING_WS", time_spent);
+}
+
+static void ws_update_audio(struct mg_connection *c)
+{
+    int n = 0, nn = 0, nnn = 0;
+
+    // Set meta data
+    n = sprintf(ws_data_buffer, "A");
+
+    // Write audio
+    nn = dsp_audio_get_payload(ws_data_buffer + n, WS_BUFFER_SIZE - n);
+
+    // Check length
+    if (n + nn <= 0)
+    {
+        return;
+    }
+
+    // Send data
+    nnn = mg_ws_send(c, ws_data_buffer, n + nn, WEBSOCKET_OP_BINARY);
+    if (nnn < 0)
+    {
+        ERROR("Writing failed, error code == %d\n", nnn);
+    }
+
+    INFO("Audio header size %d, audio size %d, audio buffer size %d, socet size %d\n", n, nn, n + nn, nnn);
+}
+
+static void ws_stats_data(struct mg_connection *c)
+{
+    int n = 0, nnn = 0;
+
+    // Set meta data
+    n = sprintf(ws_data_buffer, "Df %lf;b %lf;s %lf;g %lf", timer_avg("GATHERING"), timer_avg("PROCESSING"), timer_avg("PAYLOAD"), timer_avg("SENDING_WS"));
+
+    DEBUG("ws_stats_data %s\n", ws_data_buffer);
+
+    // Send data
+    nnn = mg_ws_send(c, ws_data_buffer, n, WEBSOCKET_OP_BINARY);
     if (nnn < 0)
     {
         ERROR("Writing failed, error code == %d\n", nnn);
@@ -82,9 +139,14 @@ static void ws_handler_data(struct mg_connection *c)
 
     if (pss->send_data)
     {
-        if (spectrum_available())
+        if (dsp_spectrum_available())
         {
             ws_update_spectrum(c);
+            return;
+        }
+
+        if (pss->audio_data == 1 && dsp_audio_available()) {
+            ws_update_audio(c);
             return;
         }
     }
@@ -148,11 +210,13 @@ static void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *w
     }
     else if (mg_strcmp(command, mg_str(START_AUDIO_CMD)) == 0)
     {
+        dsp_audio_start();
         pss->audio_data = 1;
         INFO("Audio enabled\n");
     }
     else if (mg_strcmp(command, mg_str(STOP_AUDIO_CMD)) == 0)
     {
+        dsp_audio_stop();
         pss->audio_data = 0;
         INFO("Audio disabled\n");
     }
@@ -259,6 +323,23 @@ static void ws_timer_fn(void *arg)
     }
 }
 
+static void ws_stats_fn(void *arg)
+{
+    struct mg_mgr *mgr = (struct mg_mgr *)arg;
+    // Broadcast "hi" message to all connected websocket clients.
+    // Traverse over all connections
+    for (struct mg_connection *c = mgr->conns; c != NULL; c = c->next)
+    {
+        // Send only to marked connections
+        if (c->data[0] != 'W')
+        {
+            continue;
+        }
+
+        ws_stats_data(c);
+    }
+}
+
 void web_init()
 {
     INFO("Initializing web server...\n");
@@ -273,7 +354,8 @@ void web_init()
     INFO("Starting WS listener on %s/websocket\n", WEB_ADDRESS);
 
     // Timer worker for ws
-    mg_timer_add(&mgr, 100, MG_TIMER_REPEAT, timer_fn, &mgr);
+    mg_timer_add(&mgr, 100, MG_TIMER_REPEAT, ws_timer_fn, &mgr);
+    mg_timer_add(&mgr, 1000 * 60, MG_TIMER_REPEAT, ws_stats_fn, &mgr);
 
     // Create HTTP listener
     mg_http_listen(&mgr, WEB_ADDRESS, fn, NULL);

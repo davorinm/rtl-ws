@@ -6,6 +6,8 @@
 
 void spectrum_init();
 
+void spectrum_close();
+
 fftw_complex *spectrum_data_input();
 
 void spectrum_process();
@@ -13,7 +15,5 @@ void spectrum_process();
 int spectrum_available();
 
 int spectrum_payload(char *buf, int buf_len);
-
-void spectrum_close();
 
 #endif

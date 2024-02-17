@@ -13,7 +13,7 @@ struct sensor_config {
 	long long bw_hz; // Analog banwidth in Hz
 	long long fs_hz; // Baseband sample rate in Hz
 	long long lo_hz; // Local oscillator frequency in Hz
-    const char* agc_mode; // AGC mode - manual, slow_attack, fast_attack
+    long long gain_mode; // AGC mode - manual, slow_attack, fast_attack
     double gain;
 	const char* rfport; // Port name
 	long long buffer_size;
