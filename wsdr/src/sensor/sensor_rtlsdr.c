@@ -15,7 +15,7 @@
 #include "../tools/helpers.h"
 #include "../tools/timer.h"
 #include "../settings.h"
-#include "../dsp/spectrum.h"
+#include "../dsp/dsp.h"
 
 typedef struct rtl_dev
 {
@@ -77,8 +77,8 @@ static void *worker(void *user)
     {
         timer_start(&time);
 
-        /// Pointer to fft data
-        fftw_complex *in_c = spectrum_data_input();
+        // Pointer to fft data
+        fftw_complex *in_c = dsp_samples();
 
         status = sensor_loop(in_c);
         if (status < 0)
@@ -92,7 +92,7 @@ static void *worker(void *user)
 
         timer_start(&time);
         
-        spectrum_process();
+        dsp_process();
 
         timer_end(&time, &time_spent);
         timer_log("PROCESSING", time_spent);

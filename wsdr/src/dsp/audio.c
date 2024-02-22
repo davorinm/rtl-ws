@@ -97,8 +97,8 @@ void audio_close()
     list_clear(full_audio_buffers);
 }
 
-void audio_process(fftw_complex *samples) {
-
+void audio_process(fftw_complex *samples)
+{
 }
 
 int audio_available()
@@ -184,7 +184,7 @@ void audio_fm_demodulate(fftw_complex *signal, int len)
 
     for (i = 0; i < len; i++)
     {
-        demod_buffer[i] = atan2_approx(imag_cmplx_s32(signal[i]), real_cmplx_s32(signal[i]));
+        demod_buffer[i] = atan2_approx(signal[i][1], signal[i][0]);
 
         temp = demod_buffer[i];
         demod_buffer[i] -= prev_sample;

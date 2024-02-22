@@ -8,7 +8,9 @@ void dsp_init();
 
 void dsp_close();
 
-int dsp_process(fftw_complex *samples);
+fftw_complex *dsp_samples();
+
+void dsp_process();
 
 int dsp_spectrum_available();
 
@@ -20,6 +22,6 @@ void dsp_audio_stop();
 
 int dsp_audio_available();
 
-int dsp_audio_payload(char* buf, int buf_len);
+int dsp_audio_payload(char *buf, int buf_len);
 
 #endif

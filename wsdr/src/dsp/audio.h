@@ -14,7 +14,7 @@ void audio_process(fftw_complex *samples);
 
 int audio_available();
 
-int audio_payload(char* buf, int buf_len);
+int audio_payload(char *buf, int buf_len);
 
 void audio_fm_demodulate(fftw_complex *samples, int len);
 

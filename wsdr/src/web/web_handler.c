@@ -85,7 +85,7 @@ static void ws_update_audio(struct mg_connection *c)
     n = sprintf(ws_data_buffer, "A");
 
     // Write audio
-    nn = dsp_audio_get_payload(ws_data_buffer + n, WS_BUFFER_SIZE - n);
+    nn = dsp_audio_payload(ws_data_buffer + n, WS_BUFFER_SIZE - n);
 
     // Check length
     if (n + nn <= 0)

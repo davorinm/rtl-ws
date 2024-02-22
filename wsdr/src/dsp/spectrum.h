@@ -4,11 +4,9 @@
 #include <stdint.h>
 #include <fftw3.h>
 
-void spectrum_init();
+void spectrum_init(unsigned int sensor_count, fftw_complex *input);
 
 void spectrum_close();
-
-fftw_complex *spectrum_data_input();
 
 void spectrum_process();
 
