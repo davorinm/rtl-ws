@@ -80,8 +80,8 @@ int spectrum_payload(char *buf, unsigned int buf_len)
 {
     unsigned int count = 0;
 
-    for (count = 0; count < MIN(buf_len, sensor_samples); count++)
-    // for (count = 0; count < MIN(buf_len, sensor_samples/2); count++)
+    // for (count = 0; count < MIN(buf_len, sensor_samples); count++)
+    for (count = 0; count < MIN(buf_len, sensor_samples/2); count++)
     {   
         double val = power_spectrum[count];
         if (val > 120) {

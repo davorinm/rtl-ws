@@ -520,7 +520,13 @@ function drawFilter() {
     // Clear canvas
     spectrumFilterCtx.clearRect(0, 0, bw, bh);
 
-    if (spectrumFilterStart == null) {
+    // Calculate start position
+    let jjj = spectrumFilterStartHz - real_frequency;
+    let jjj1 = jjj / real_samplerate;
+    let jjj2 = spectrumCanvas.clientWidth * jjj1;
+
+    const spectrumFilterStartPx = jjj2;
+    if (spectrumFilterStartPx == null) {
         return;
     }
 
@@ -533,7 +539,13 @@ function drawFilter() {
     spectrumFilterCtx.lineWidth = 0.5;
     spectrumFilterCtx.stroke();
 
-    if (spectrumFilterEnd == null) {
+    // Calculate end position
+    let iii = spectrumFilterStartHz - real_frequency + spectrumFilterWidthHz;
+    let iii1 = iii / real_samplerate;
+    let iii2 = spectrumCanvas.clientWidth * iii1;
+
+    const spectrumFilterEndPx = iii2;
+    if (spectrumFilterEndPx == null) {
         return;
     }
 
@@ -569,8 +581,8 @@ function drawFrequencyBands() {
     // Clear canvas
     bandCtx.clearRect(0, 0, bw, bh);
 
-    bandCtx.font = "16px Georgia";
-    bandCtx.fillStyle = "black";
+    // bandCtx.font = "16px Georgia";
+    // bandCtx.fillStyle = "black";
 
     const textVerticalPosition = bh / 2;
 
@@ -721,7 +733,7 @@ async function resizeImageData(imageData, width, height) {
 
 /// Actions
 
-function frequency_change() {
+function frequency_change(e) {
     let frequency = document.getElementById("frequency").value;
     socket_lm.send("freq " + frequency);
 }
@@ -813,6 +825,8 @@ function tuner_frequency_change() {
     spectrumFilterStartHz = parseInt(value);
 
     drawFilter();
+    
+    socket_lm.send("filter_freq " + value);
 }
 
 function tuner_filter_width_change() {
@@ -821,4 +835,6 @@ function tuner_filter_width_change() {
     spectrumFilterWidthHz = parseInt(value);
 
     drawFilter();
+
+    socket_lm.send("filter_freq_width " + value);
 }

@@ -114,7 +114,7 @@ int sensor_init()
     dev->fs = 2048000;
     dev->gain_mode = 1;
     dev->gain = 25;
-    dev->samples = 2048;
+    dev->samples = 4096;
 
     // Buffer
     buf = calloc(1, dev->samples * sizeof(uint8_t));

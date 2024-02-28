@@ -27,7 +27,9 @@
 			"sensor.h": "c",
 			"resample.h": "c",
 			"stdint.h": "c",
-			"list.h": "c"
+			"list.h": "c",
+			"typeinfo": "c",
+			"chrono": "c"
 		},
 		"makefile.launchConfigurations": [
 			{
