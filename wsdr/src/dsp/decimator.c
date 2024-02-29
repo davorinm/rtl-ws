@@ -6,7 +6,6 @@
 #include "decimator.h"
 #include "resample.h"
 #include "cic_decimate.h"
-#include "../tools/list.h"
 #include "../tools/helpers.h"
 
 #define INTERNAL_BUF_LEN_MS 100
@@ -15,7 +14,7 @@
 struct rf_decimator
 {
     pthread_mutex_t mutex;
-    struct list *callback_list;
+    rf_decimator_callback callback;
 
     double sample_rate;
     int down_factor;
@@ -30,26 +29,12 @@ struct rf_decimator
     struct cic_delay_line delay;
 };
 
-static void callback_notifier(void *callback, void *decim)
-{
-    rf_decimator_callback f = (rf_decimator_callback)callback;
-    rf_decimator *d = (rf_decimator *)decim;
-    f(d->resampled_signal, d->resampled_signal_len);
-}
-
-rf_decimator *rf_decimator_alloc()
+rf_decimator *decimator_init(rf_decimator_callback callback)
 {
     rf_decimator *d = (rf_decimator *)calloc(1, sizeof(rf_decimator));
     pthread_mutex_init(&(d->mutex), NULL);
-    d->callback_list = list_alloc();
+    d->callback = callback;
     return d;
-}
-
-void rf_decimator_add_callback(rf_decimator *d, rf_decimator_callback callback)
-{
-    pthread_mutex_lock(&(d->mutex));
-    list_add(d->callback_list, callback);
-    pthread_mutex_unlock(&(d->mutex));
 }
 
 int rf_decimator_set_parameters(rf_decimator *d, double sample_rate, int down_factor)
@@ -106,7 +91,9 @@ int rf_decimator_decimate(rf_decimator *d, const cmplx_s32 *complex_signal, int 
             return -2;
         }
 
-        list_apply2(d->callback_list, callback_notifier, d);
+        // Callback
+        rf_decimator_callback f = (rf_decimator_callback) d->callback;
+        f(d->resampled_signal, d->resampled_signal_len);
 
         d->surplus = 0;
         block_size = d->input_signal_len;
@@ -122,18 +109,10 @@ int rf_decimator_decimate(rf_decimator *d, const cmplx_s32 *complex_signal, int 
     return 0;
 }
 
-void rf_decimator_remove_callbacks(rf_decimator *d)
-{
-    pthread_mutex_lock(&(d->mutex));
-    list_clear(d->callback_list);
-    pthread_mutex_unlock(&(d->mutex));
-}
-
 void rf_decimator_free(rf_decimator *d)
 {
-    rf_decimator_remove_callbacks(d);
+    d->callback = NULL;
     pthread_mutex_destroy(&(d->mutex));
-    list_free(d->callback_list);
     free(d->input_signal);
     free(d->resampled_signal);
     free(d);

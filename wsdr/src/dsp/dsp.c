@@ -30,9 +30,8 @@ void dsp_init()
     spectrum_init(samples_count, samples_input);
 
     INFO("Initializing decimator\n");
-    decim = rf_decimator_alloc();
+    decim = decimator_init(audio_process);
     rf_decimator_set_parameters(decim, samplingRate, samplingRate / DECIMATED_TARGET_BW_HZ);
-    rf_decimator_add_callback(decim, audio_process);
 
     INFO("Initializing audio\n");
     audio_init();

@@ -16,7 +16,9 @@ int cic_decimate(int R, const cmplx_s32 *src, int src_len, cmplx_s32 *dst, int d
     set_cmplx_s32(comb_prev_in, delay->comb_prev_in);
 
     if (dst_len * R != src_len)
+    {
         return -1;
+    }
 
     for (src_idx = 0; src_idx < src_len; src_idx++)
     {
@@ -41,5 +43,6 @@ int cic_decimate(int R, const cmplx_s32 *src, int src_len, cmplx_s32 *dst, int d
 
     set_cmplx_s32(delay->integrator_prev_out, integrator_prev_out);
     set_cmplx_s32(delay->comb_prev_in, comb_prev_in);
+
     return 0;
 }

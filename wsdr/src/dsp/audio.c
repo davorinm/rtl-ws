@@ -23,43 +23,6 @@ static struct list *used_audio_buffers = NULL;
 static int audio_buffer_len = 0;
 static pthread_mutex_t audio_mutex;
 
-static float atan2_approx(float y, float x)
-{
-    static const float pi_by_2 = (float)(M_PI / 2);
-    register float atan = 0;
-    register float z = 0;
-
-    if (x == 0)
-    {
-        if (y > 0.0f)
-            return pi_by_2;
-
-        if (y == 0)
-            return 0;
-
-        return -pi_by_2;
-    }
-    z = y / x;
-    if (fabs(z) < 1.0f)
-    {
-        atan = z / (1.0f + 0.28f * z * z);
-        if (x < 0)
-        {
-            if (y < 0.0f)
-                return atan - M_PI;
-
-            return atan + M_PI;
-        }
-    }
-    else
-    {
-        atan = pi_by_2 - z / (z * z + 0.28f);
-        if (y < 0.0f)
-            return atan - M_PI;
-    }
-    return atan;
-}
-
 void audio_init()
 {
     used_audio_buffers = list_alloc();
@@ -128,7 +91,7 @@ int audio_payload(char *buf, int buf_len)
     return copied_samples * sizeof(float);
 }
 
-void audio_process(fftw_complex *samples, int len)
+void audio_process(const cmplx_s32 *signal, int len)
 {
     static const float scale = 1;
     static float delay_line_1[HALF_BAND_N - 1] = {0};
@@ -166,7 +129,7 @@ void audio_process(fftw_complex *samples, int len)
 
     for (i = 0; i < len; i++)
     {
-        demod_buffer[i] = atan2_approx(samples[i][1], samples[i][0]);
+        demod_buffer[i] = atan2_approx(imag_cmplx_s32(signal[i]), real_cmplx_s32(signal[i]));
 
         temp = demod_buffer[i];
         demod_buffer[i] -= prev_sample;
