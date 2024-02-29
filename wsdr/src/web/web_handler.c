@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include "../sensor/sensor.h"
 #include "../dsp/dsp.h"
-#include "../settings.h"
 #include "../tools/helpers.h"
 #include "../tools/timer.h"
 #include "../mongoose/mongoose.h"

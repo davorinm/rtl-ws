@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 #include <fftw3.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <math.h>
+
+#define DECIMATED_TARGET_BW_HZ 192000
 
 void dsp_init();
 

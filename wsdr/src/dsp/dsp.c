@@ -2,7 +2,6 @@
 
 #include "dsp.h"
 #include "spectrum.h"
-#include "filter.h"
 #include "audio.h"
 #include "decimator.h"
 #include "../tools/helpers.h"
@@ -11,13 +10,17 @@
 fftw_complex *samples_input;
 fftw_complex *samples_filter_output;
 
+static rf_decimator *decim = NULL;
+
+unsigned int samples_count = 0;
+
 void dsp_init()
 {
-    // Get samples count from sensor
-   unsigned int samples_count = sensor_get_buffer_size();
-
-    // Get samples count from sensor
-   unsigned int centerFrequency = sensor_get_freq();
+    // Get data from sensor
+    samples_count = sensor_get_buffer_size();
+    unsigned int centerFrequency = sensor_get_freq();
+    unsigned int bandwidth = sensor_get_freq();
+    unsigned int samplingRate = sensor_get_sample_rate();
 
     // Init samples
     samples_input = fftw_malloc(sizeof(fftw_complex) * samples_count);
@@ -26,11 +29,10 @@ void dsp_init()
     INFO("Initializing spectrum\n");
     spectrum_init(samples_count, samples_input);
 
-    INFO("Initializing filter\n");
-    filter_init(samples_count, centerFrequency, bandwidth, samplingRate);
-
     INFO("Initializing decimator\n");
-    decimator_init();
+    decim = rf_decimator_alloc();
+    rf_decimator_set_parameters(decim, samplingRate, samplingRate / DECIMATED_TARGET_BW_HZ);
+    rf_decimator_add_callback(decim, audio_process);
 
     INFO("Initializing audio\n");
     audio_init();
@@ -44,11 +46,8 @@ void dsp_close()
     INFO("Closing spectrum\n");
     spectrum_close();
 
-    INFO("Closing filter\n");
-    filter_close();
-
     INFO("Closing decimator\n");
-    decimator_close();
+    rf_decimator_free(decim);
 
     INFO("Closing audio\n");
     audio_close();
@@ -64,14 +63,8 @@ void dsp_process()
     // spectrum
     spectrum_process(samples_input);
 
-    // filter
-    filter_process(samples_input, samples_filter_output);
-
-    // decimate
-    decimator_process(samples_filter_output);
-
-    // demodulate
-    audio_process(samples_filter_output);
+    // decimator
+    rf_decimator_decimate(decim, samples_input, samples_count);
 }
 
 int dsp_spectrum_available()

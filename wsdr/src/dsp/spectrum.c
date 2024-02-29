@@ -6,8 +6,7 @@
 #include <complex.h>
 #include <fftw3.h>
 
-#include "../settings.h"
-#include "filter.h"
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
 
 // Size
 unsigned int sensor_samples;
@@ -56,7 +55,7 @@ void spectrum_process()
 {
     unsigned int i = 0;
     unsigned int buffer_size_squared = sensor_samples * sensor_samples;
-    
+
     // FFT
     fftw_execute(plan_forward);
 
@@ -73,21 +72,21 @@ int spectrum_available()
     return new_spectrum_available;
 }
 
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-
-
 int spectrum_payload(char *buf, unsigned int buf_len)
 {
     unsigned int count = 0;
 
+    // TODO: Check
     // for (count = 0; count < MIN(buf_len, sensor_samples); count++)
-    for (count = 0; count < MIN(buf_len, sensor_samples/2); count++)
-    {   
+    for (count = 0; count < MIN(buf_len, sensor_samples / 2); count++)
+    {
         double val = power_spectrum[count];
-        if (val > 120) {
+        if (val > 120)
+        {
             val = 120;
         }
-        if (val < -120) {
+        if (val < -120)
+        {
             val = -120;
         }
         buf[count] = (int8_t)val;

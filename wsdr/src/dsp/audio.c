@@ -83,24 +83,6 @@ void audio_reset()
     pthread_mutex_unlock(&audio_mutex);
 }
 
-void audio_close()
-{
-    pthread_mutex_destroy(&audio_mutex);
-
-    free(demod_buffer);
-    free(work_audio_buffer);
-
-    list_apply(used_audio_buffers, free);
-    list_clear(used_audio_buffers);
-
-    list_apply(full_audio_buffers, free);
-    list_clear(full_audio_buffers);
-}
-
-void audio_process(fftw_complex *samples)
-{
-}
-
 int audio_available()
 {
     if (full_audio_buffers == NULL)
@@ -146,7 +128,7 @@ int audio_payload(char *buf, int buf_len)
     return copied_samples * sizeof(float);
 }
 
-void audio_fm_demodulate(fftw_complex *signal, int len)
+void audio_process(fftw_complex *samples, int len)
 {
     static const float scale = 1;
     static float delay_line_1[HALF_BAND_N - 1] = {0};
@@ -184,7 +166,7 @@ void audio_fm_demodulate(fftw_complex *signal, int len)
 
     for (i = 0; i < len; i++)
     {
-        demod_buffer[i] = atan2_approx(signal[i][1], signal[i][0]);
+        demod_buffer[i] = atan2_approx(samples[i][1], samples[i][0]);
 
         temp = demod_buffer[i];
         demod_buffer[i] -= prev_sample;
@@ -216,4 +198,18 @@ void audio_fm_demodulate(fftw_complex *signal, int len)
     }
 
     pthread_mutex_unlock(&audio_mutex);
+}
+
+void audio_close()
+{
+    pthread_mutex_destroy(&audio_mutex);
+
+    free(demod_buffer);
+    free(work_audio_buffer);
+
+    list_apply(used_audio_buffers, free);
+    list_clear(used_audio_buffers);
+
+    list_apply(full_audio_buffers, free);
+    list_clear(full_audio_buffers);
 }
