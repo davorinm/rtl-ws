@@ -81,7 +81,7 @@ static void ws_update_audio(struct mg_connection *c)
     int n = 0, nn = 0, nnn = 0;
 
     // Set meta data
-    n = sprintf(ws_data_buffer, "A");
+    n = sprintf(ws_data_buffer, "A   ");
 
     // Write audio
     nn = dsp_audio_payload(ws_data_buffer + n, WS_BUFFER_SIZE - n);
@@ -141,12 +141,13 @@ static void ws_handler_data(struct mg_connection *c)
         if (dsp_spectrum_available())
         {
             ws_update_spectrum(c);
-            return;
+            // return;
         }
 
-        if (pss->audio_data == 1 && dsp_audio_available()) {
+        if (pss->audio_data == 1 && dsp_audio_available())
+        {
             ws_update_audio(c);
-            return;
+            // return;
         }
     }
 }

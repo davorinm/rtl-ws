@@ -2,6 +2,7 @@
 #define SIGNAL_SOURCE_H
 
 #include <stdint.h>
+#include <complex.h>
 #include <fftw3.h>
 
 int sensor_init();

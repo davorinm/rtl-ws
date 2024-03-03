@@ -9,14 +9,13 @@
 #include "../tools/helpers.h"
 
 #define INTERNAL_BUF_LEN_MS 100
-#define EPSILON 0.0001
 
 struct rf_decimator
 {
     pthread_mutex_t mutex;
     rf_decimator_callback callback;
 
-    double sample_rate;
+    int sample_rate;
     int down_factor;
 
     cmplx_s32 *input_signal;
@@ -37,23 +36,23 @@ rf_decimator *decimator_init(rf_decimator_callback callback)
     return d;
 }
 
-int rf_decimator_set_parameters(rf_decimator *d, double sample_rate, int down_factor)
+int rf_decimator_set_parameters(rf_decimator *d, int sample_rate, int down_factor)
 {
     int r = -1;
 
     pthread_mutex_lock(&(d->mutex));
     if (sample_rate > 0 && down_factor > 0)
     {
-        if (fabs(d->sample_rate - sample_rate) > EPSILON || d->down_factor != down_factor)
+        if (d->sample_rate != sample_rate || d->down_factor != down_factor)
         {
-            DEBUG("Setting RF decimator params: sample_rate == %f, down_factor == %d\n", sample_rate, down_factor);
+            DEBUG("Setting RF decimator params: sample_rate == %d, down_factor == %d\n", sample_rate, down_factor);
             d->sample_rate = sample_rate;
             d->down_factor = down_factor;
             d->resampled_signal_len = (int)((d->sample_rate / d->down_factor) * INTERNAL_BUF_LEN_MS / 1000);
             d->input_signal_len = d->resampled_signal_len * d->down_factor;
 
             d->resampled_signal = (cmplx_s32 *)realloc(d->resampled_signal, d->resampled_signal_len * sizeof(cmplx_s32));
-            d->input_signal = (cmplx_s32 *)realloc(d->input_signal, d->input_signal_len * sizeof(cmplx_s32 *));
+            d->input_signal = (cmplx_s32 *)realloc(d->input_signal, d->input_signal_len * sizeof(cmplx_s32));
 
             d->surplus = 0;
         }
@@ -87,7 +86,7 @@ int rf_decimator_decimate(rf_decimator *d, const cmplx_s32 *complex_signal, int 
 
         if (cic_decimate(d->down_factor, d->input_signal, d->input_signal_len, d->resampled_signal, d->resampled_signal_len, &(d->delay)))
         {
-            ERROR("Error while decimating signal");
+            ERROR("Error while decimating signal\n");
             return -2;
         }
 

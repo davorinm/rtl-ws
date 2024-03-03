@@ -69,7 +69,6 @@ window.onload = function (event) {
 };
 
 window.onresize = function (event) {
-    initialize();
     drawGrid();
     drawSpectrum();
     drawFrequencyBands()
@@ -292,7 +291,7 @@ function waterfallMoveListener(e) {
 
 function waterfallUpListener(e) {
     waterfallMouseDown = false;
-    
+
     const elementRelativeX = e.offsetX;
 
     const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
@@ -356,7 +355,7 @@ function initialize() {
 
     let start_or_stop_element = document.getElementById('start_or_stop');
     start_or_stop_element.addEventListener("click", start_or_stop);
-    
+
     let tuner_frequency_element = document.getElementById('tuner_frequency');
     tuner_frequency_element.addEventListener("input", tuner_frequency_change);
 
@@ -680,7 +679,7 @@ function drawSpectrumChartValuesCanvas() {
     spectrumChartValuesCtx.save();
     spectrumChartValuesCtx.rotate(-Math.PI / 2);
     spectrumChartValuesCtx.textAlign = "center";
-    spectrumChartValuesCtx.fillText("Power (dBm)", -(bh/2), 17);
+    spectrumChartValuesCtx.fillText("Power (dBm)", -(bh / 2), 17);
     spectrumChartValuesCtx.restore();
 
     // Draw values
@@ -691,7 +690,7 @@ function drawSpectrumChartValuesCanvas() {
         }
 
         let y = mapToSpectrumRange(i, bh);
-        spectrumChartValuesCtx.fillText("" + i, bw - 5, y+2);
+        spectrumChartValuesCtx.fillText("" + i, bw - 5, y + 2);
     }
 }
 
@@ -712,7 +711,7 @@ function drawSpectrumTimeValuesCanvas() {
     spectrumTimeValuesCtx.save();
     spectrumTimeValuesCtx.rotate(-Math.PI / 2);
     spectrumTimeValuesCtx.textAlign = "center";
-    spectrumTimeValuesCtx.fillText("Time", -(bh/2), 17);
+    spectrumTimeValuesCtx.fillText("Time", -(bh / 2), 17);
     spectrumTimeValuesCtx.restore();
 }
 
@@ -825,7 +824,7 @@ function tuner_frequency_change() {
     spectrumFilterStartHz = parseInt(value);
 
     drawFilter();
-    
+
     socket_lm.send("filter_freq " + value);
 }
 

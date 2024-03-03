@@ -1,13 +1,11 @@
 #ifndef DSP_H
 #define DSP_H
 
-#include <stdint.h>
-#include <fftw3.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <math.h>
+#include <complex.h>
+#include <fftw3.h>
 
-#define DECIMATED_TARGET_BW_HZ 192000
+#define DECIMATED_TARGET_BW_HZ 192000 //44100 * 4
 
 void dsp_init();
 

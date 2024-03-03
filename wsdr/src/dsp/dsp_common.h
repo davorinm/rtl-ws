@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
+#include <complex.h>
+#include <fftw3.h>
 
 typedef union
 {
@@ -16,10 +18,6 @@ typedef union
 } cmplx_s32;
 
 #define set_cmplx_s32(dst, src) dst.bulk = src.bulk;
-
-#define set_cmplx_s32_cmplx_u8(dst, src, transform) \
-    dst.p.re = transform + src.re;                  \
-    dst.p.im = transform + src.im;
 
 #define add_cmplx_s32(a, b, result) \
     result.p.re = a.p.re + b.p.re;  \

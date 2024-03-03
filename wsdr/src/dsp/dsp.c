@@ -7,8 +7,13 @@
 #include "../tools/helpers.h"
 #include "../sensor/sensor.h"
 
+#include <math.h>
+#include <complex.h>
+#include <fftw3.h>
+
 fftw_complex *samples_input;
 fftw_complex *samples_filter_output;
+cmplx_s32 *samples_input32;
 
 static rf_decimator *decim = NULL;
 
@@ -25,6 +30,7 @@ void dsp_init()
     // Init samples
     samples_input = fftw_malloc(sizeof(fftw_complex) * samples_count);
     samples_filter_output = fftw_malloc(sizeof(fftw_complex) * samples_count);
+    samples_input32 = (cmplx_s32 *)realloc(samples_input32, samples_count * sizeof(cmplx_s32));
 
     INFO("Initializing spectrum\n");
     spectrum_init(samples_count, samples_input);
@@ -57,13 +63,25 @@ fftw_complex *dsp_samples()
     return samples_input;
 }
 
+static unsigned int i = 0;
+
 void dsp_process()
 {
     // spectrum
     spectrum_process(samples_input);
 
+    for (i = 0; i < samples_count; i++) {
+
+        // INFO("DSP R %f, %f\n", creal(samples_input[i]), 128 * creal(samples_input[i]));
+        // INFO("DSP I %f, %f\n", cimag(samples_input[i]), 128 * cimag(samples_input[i]));
+
+
+        samples_input32[i].p.re = 128 * creal(samples_input[i]) * 2;               
+        samples_input32[i].p.im = 128 * cimag(samples_input[i]) * 2;
+    }
+
     // decimator
-    rf_decimator_decimate(decim, samples_input, samples_count);
+    rf_decimator_decimate(decim, samples_input32, samples_count);
 }
 
 int dsp_spectrum_available()
@@ -78,10 +96,12 @@ int dsp_spectrum_get_payload(char *buf, int buf_len)
 
 void dsp_audio_start()
 {
+    audio_reset();
 }
 
 void dsp_audio_stop()
 {
+    audio_reset();
 }
 
 int dsp_audio_available()

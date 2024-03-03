@@ -14,7 +14,6 @@
 #include "sensor.h"
 #include "../tools/helpers.h"
 #include "../tools/timer.h"
-#include "../settings.h"
 #include "../dsp/dsp.h"
 
 typedef struct rtl_dev
@@ -42,20 +41,30 @@ static int sensor_loop(fftw_complex *in_c)
     int retval;
 
     // Refill RX buffer
-    retval = rtlsdr_read_sync(dev->dev, buf, dev->samples, &samples_read);
+    retval = rtlsdr_read_sync(dev->dev, buf, dev->samples * 2, &samples_read);
     if (retval < 0)
     {
         DEBUG("Samples read failed: %d\n", retval);
         return 0;
     }
+        
+        // DEBUG("Samples read: %d, %d\n", dev->samples, samples_read);
 
     // convert buffer from IQ to complex ready for FFTW, seems that rtlsdr outputs IQ data as IQIQIQIQIQIQ so ......
     int i;
     int n = 0;
-    for (i = 0; i < (samples_read - 2); i += 2)
+    for (i = 0; i < samples_read; i += 2)
     {
-        __real__ in_c[i] = buf[n] - 127; // sample is 127 for zero signal,so 127 +/-127
-        __imag__ in_c[i] = buf[n + 1] - 127;
+        in_c[n] = ((buf[i] + I * buf[i + 1]) - 127) / 127;
+
+        
+
+        // INFO("Sample r %d, %f\n", buf[i], (((float)buf[i]) - 127) / 127);
+        // INFO("Sample r2 %f\n", creal(in_c[n]));
+
+
+        // __real__ in_c[n] = (double)buf[i] / 127; // sample is 127 for zero signal,so 127 +/-127
+        // __imag__ in_c[n] = (double)buf[i + 1] / 127;
         // printf("%f + %f\n", __real__  in[i], __imag__ in[i]);
         n++;
     }
@@ -114,10 +123,10 @@ int sensor_init()
     dev->fs = 2048000;
     dev->gain_mode = 1;
     dev->gain = 25;
-    dev->samples = 4096;
+    dev->samples = 4096 * 2;
 
     // Buffer
-    buf = calloc(1, dev->samples * sizeof(uint8_t));
+    buf = calloc(1, dev->samples * sizeof(uint8_t) * 2);
 
     // Open
     DEBUG("rtlsdr_open...\n");
