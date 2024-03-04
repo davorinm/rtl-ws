@@ -3,8 +3,6 @@
 
 #include "dsp_common.h"
 
-#define HALF_BAND_N 11
-
 struct cic_delay_line
 {
     cmplx_s32 integrator_prev_out;

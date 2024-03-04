@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
-#include <complex.h>
-#include <fftw3.h>
 
 typedef union
 {

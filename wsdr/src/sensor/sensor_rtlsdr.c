@@ -6,8 +6,6 @@
 #include <rtl-sdr.h>
 
 #include <math.h>
-#include <complex.h>
-#include <fftw3.h>
 
 #include <stdbool.h>
 
@@ -29,13 +27,30 @@ typedef struct rtl_dev
 
 static rtl_dev_t *dev = NULL;
 
-static uint8_t *buf = NULL; 
+static uint8_t *buf = NULL;
+static cmplx_s32 *samples_output;
 
 // Thread
 static pthread_t worker_thread;
 static bool running = false;
 
-static int sensor_loop(fftw_complex *in_c)
+// Callback
+static signal_source_callback callback_function;
+static pthread_mutex_t callback_mutex;
+
+static void signal_source_callback_notifier()
+{
+    if (callback_function == NULL)
+    {
+        return;
+    }
+
+    pthread_mutex_lock(&callback_mutex);
+    callback_function(samples_output, dev->samples);
+    pthread_mutex_unlock(&callback_mutex);
+}
+
+static int sensor_loop()
 {
     int samples_read;
     int retval;
@@ -47,25 +62,22 @@ static int sensor_loop(fftw_complex *in_c)
         DEBUG("Samples read failed: %d\n", retval);
         return 0;
     }
-        
-        // DEBUG("Samples read: %d, %d\n", dev->samples, samples_read);
 
-    // convert buffer from IQ to complex ready for FFTW, seems that rtlsdr outputs IQ data as IQIQIQIQIQIQ so ......
+    // convert buffer from IQ to complex
     int i;
     int n = 0;
     for (i = 0; i < samples_read; i += 2)
     {
-        in_c[n] = ((buf[i] + I * buf[i + 1]) - 127) / 127;
+        // in_c[n] = ((buf[i] + I * buf[i + 1]) - 127) / 127; TODO: use double, divide with 127
+        samples_output[n].p.re = (int32_t)buf[i] - 128;
+        samples_output[n].p.im = (int32_t)buf[i + 1] - 128;
 
-        
-
-        // INFO("Sample r %d, %f\n", buf[i], (((float)buf[i]) - 127) / 127);
-        // INFO("Sample r2 %f\n", creal(in_c[n]));
 
 
         // __real__ in_c[n] = (double)buf[i] / 127; // sample is 127 for zero signal,so 127 +/-127
         // __imag__ in_c[n] = (double)buf[i + 1] / 127;
         // printf("%f + %f\n", __real__  in[i], __imag__ in[i]);
+        // Increment samples_output pointer
         n++;
     }
 
@@ -86,10 +98,7 @@ static void *worker(void *user)
     {
         timer_start(&time);
 
-        // Pointer to fft data
-        fftw_complex *in_c = dsp_samples();
-
-        status = sensor_loop(in_c);
+        status = sensor_loop();
         if (status < 0)
         {
             ERROR("Read failed with status %d\n", status);
@@ -100,8 +109,8 @@ static void *worker(void *user)
         timer_log("GATHERING", time_spent);
 
         timer_start(&time);
-        
-        dsp_process();
+
+        signal_source_callback_notifier();
 
         timer_end(&time, &time_spent);
         timer_log("PROCESSING", time_spent);
@@ -120,13 +129,17 @@ int sensor_init()
     dev = (rtl_dev_t *)calloc(1, sizeof(rtl_dev_t));
     dev->device_index = 0;
     dev->f = 102800000;
-    dev->fs = 2048000;
-    dev->gain_mode = 1;
+    dev->fs = 1920000;
+    dev->gain_mode = 0;
     dev->gain = 25;
     dev->samples = 4096 * 2;
 
-    // Buffer
+    // Buffers
     buf = calloc(1, dev->samples * sizeof(uint8_t) * 2);
+    samples_output = calloc(1, dev->samples * sizeof(cmplx_s32));
+
+    // Lock
+    pthread_mutex_init(&callback_mutex, NULL);
 
     // Open
     DEBUG("rtlsdr_open...\n");
@@ -138,7 +151,7 @@ int sensor_init()
     }
 
     DEBUG("rtl_set_sample_rate...\n");
-    r = sensor_set_sample_rate(dev->fs);
+    r = rtlsdr_set_sample_rate(dev->dev, dev->fs);
     if (r < 0)
     {
         ERROR("Failed to set sample rate \n");
@@ -146,7 +159,7 @@ int sensor_init()
     }
 
     DEBUG("rtl_set_frequency...\n");
-    r = sensor_set_frequency(dev->f);
+    r = rtlsdr_set_center_freq(dev->dev, dev->f);
     if (r < 0)
     {
         ERROR("Failed to set frequency \n");
@@ -162,7 +175,7 @@ int sensor_init()
     }
 
     DEBUG("Setting rtl gain to %f...\n", dev->gain);
-    r = sensor_set_gain(dev->gain);
+    r = rtlsdr_set_tuner_gain(dev->dev, (int)(dev->gain * 10));
     if (r < 0)
     {
 
@@ -179,6 +192,20 @@ int sensor_init()
 
     DEBUG("rtl_init returns %d\n", r);
     return r;
+}
+
+void signal_source_add_callback(signal_source_callback callback)
+{
+    pthread_mutex_lock(&callback_mutex);
+    callback_function = callback;
+    pthread_mutex_unlock(&callback_mutex);
+}
+
+void signal_source_remove_callback()
+{
+    pthread_mutex_lock(&callback_mutex);
+    callback_function = NULL;
+    pthread_mutex_unlock(&callback_mutex);
 }
 
 uint32_t sensor_get_freq()
@@ -205,11 +232,13 @@ int sensor_set_frequency(uint32_t f)
     return r;
 }
 
-uint32_t sensor_get_rf_band_width() {
+uint32_t sensor_get_rf_band_width()
+{
     return dev->fs;
 }
 
-int sensor_set_rf_band_width(uint32_t bw) {
+int sensor_set_rf_band_width(uint32_t bw)
+{
     UNUSED(bw);
     return 0;
 }
@@ -286,7 +315,8 @@ int sensor_set_gain(double gain)
     return r;
 }
 
-uint32_t sensor_get_buffer_size() {
+uint32_t sensor_get_buffer_size()
+{
     return dev->samples;
 }
 
@@ -300,9 +330,10 @@ void sensor_start()
     DEBUG("Sensor started.\n");
 }
 
-void sensor_stop() {
+void sensor_stop()
+{
     DEBUG("* Stopping worker_thread\n");
-    
+
     running = false;
     pthread_join(worker_thread, NULL);
 }
@@ -310,6 +341,9 @@ void sensor_stop() {
 void sensor_close()
 {
     free(buf);
+    free(samples_output);
+
+    pthread_mutex_destroy(&callback_mutex);
 
     DEBUG("sensor_close called with dev == %lx\n", (unsigned long)dev);
     if (dev->dev != NULL)

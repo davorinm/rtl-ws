@@ -1,9 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <math.h>
 
 #include "audio.h"
 #include "resample.h"
@@ -46,7 +43,7 @@ void audio_reset()
     pthread_mutex_unlock(&audio_mutex);
 }
 
-int audio_available()
+int audio_new_audio_available()
 {
     if (full_audio_buffers == NULL)
     {
@@ -56,7 +53,7 @@ int audio_available()
     return list_length(full_audio_buffers) > 0;
 }
 
-int audio_payload(char *buf, int buf_len)
+int audio_get_audio_payload(char *buf, int buf_len)
 {
     static int audio_buf_cur_idx = 0;
     float *data = NULL;
@@ -91,7 +88,7 @@ int audio_payload(char *buf, int buf_len)
     return copied_samples * sizeof(float);
 }
 
-void audio_process(const cmplx_s32 *signal, int len)
+void audio_fm_demodulator(const cmplx_s32 *signal, int len)
 {
     static const float scale = 1;
     static float delay_line_1[HALF_BAND_N - 1] = {0};

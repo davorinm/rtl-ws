@@ -6,10 +6,8 @@
 #include <iio.h>
 
 #include <math.h>
-#include <complex.h>
-#include <fftw3.h>
 
-#include <time.h> 
+#include <time.h>
 #include <sys/time.h>
 
 #include "sensor.h"
@@ -30,11 +28,30 @@ struct sensor_config config;
 // Streaming devices
 struct iio_device *rx;
 
+// Buffer
+static cmplx_s32 *samples_output;
+
 // Thread
 static pthread_t worker_thread;
 static bool running = false;
 
-static int sensor_loop(fftw_complex *in_c)
+// Callback
+static signal_source_callback callback_function;
+static pthread_mutex_t callback_mutex;
+
+static void signal_source_callback_notifier()
+{
+    if (callback_function == NULL)
+    {
+        return;
+    }
+
+    pthread_mutex_lock(&callback_mutex);
+    callback_function(samples_output, config.buffer_size);
+    pthread_mutex_unlock(&callback_mutex);
+}
+
+static int sensor_loop()
 {
     ssize_t nbytes_rx;
     char *p_dat, *p_end;
@@ -60,7 +77,11 @@ static int sensor_loop(fftw_complex *in_c)
         const int16_t real = ((int16_t *)p_dat)[0]; // Real (I)
         const int16_t imag = ((int16_t *)p_dat)[1]; // Imag (Q)
 
-        in_c[cnt] = (real + I * imag) / 2048;
+        // in_c[cnt] = (real + I * imag) / 2048;
+        // TODO: Make real cplx number
+
+        samples_output[cnt].p.re = (int32_t)real - 2048;
+        samples_output[cnt].p.im = (int32_t)imag - 2048;
     }
 
     return 0;
@@ -80,10 +101,7 @@ static void *worker(void *user)
     {
         timer_start(&time);
 
-        // Pointer to fft data
-        fftw_complex *in_c = dsp_samples();
-
-        status = sensor_loop(in_c);
+        status = sensor_loop();
         if (status < 0)
         {
             ERROR("Read failed with status %d\n", status);
@@ -93,8 +111,8 @@ static void *worker(void *user)
         timer_log("GATHERING", time_spent);
 
         timer_start(&time);
-        
-        dsp_process();
+
+        signal_source_callback_notifier();
 
         timer_end(&time, &time_spent);
         timer_log("PROCESSING", time_spent);
@@ -112,11 +130,17 @@ int sensor_init()
     // RX stream config
 	config.bw_hz = MHZ(10);             // 2 MHz rf bandwidth
 	config.fs_hz = MHZ(10);             // 2.5 MS/s rx sample rate
-	config.lo_hz = MHZ(430);            // 2.5 GHz rf frequency
     config.gain_mode = 0;               // "manual fast_attack slow_attack hybrid" 
     config.gain = 60;                   // 0 dB gain
     config.rfport = "A_BALANCED";       // port A (select for rf freq.)
     config.buffer_size = 1024 * 8;      // Device samples buffer size
+    config.lo_hz = MHZ(100);       // 2.5 GHz rf frequency
+
+    // Buffer
+    samples_output = calloc(1, config.buffer_size * sizeof(cmplx_s32));
+
+    // Lock
+    pthread_mutex_init(&callback_mutex, NULL);
 
     DEBUG("* Acquiring IIO context\n");
     ctx = iio_create_default_context();
@@ -187,6 +211,20 @@ int sensor_init()
     return 0;
 }
 
+void signal_source_add_callback(signal_source_callback callback)
+{
+    pthread_mutex_lock(&callback_mutex);
+    callback_function = callback;
+    pthread_mutex_unlock(&callback_mutex);
+}
+
+void signal_source_remove_callback()
+{
+    pthread_mutex_lock(&callback_mutex);
+    callback_function = NULL;
+    pthread_mutex_unlock(&callback_mutex);
+}
+
 uint32_t sensor_get_freq()
 {
     return config.lo_hz;
@@ -250,11 +288,13 @@ int sensor_set_sample_rate(uint32_t fs)
     return ret;
 }
 
-uint32_t sensor_get_gain_mode() {
+uint32_t sensor_get_gain_mode()
+{
     return config.gain_mode;
 }
 
-int sensor_set_gain_mode(uint32_t gain_mode) {
+int sensor_set_gain_mode(uint32_t gain_mode)
+{
 
     if (config.gain_mode == gain_mode)
     {
@@ -291,7 +331,8 @@ int sensor_set_gain(double gain)
     return ret;
 }
 
-uint32_t sensor_get_buffer_size() {
+uint32_t sensor_get_buffer_size()
+{
     return config.buffer_size;
 }
 
@@ -305,7 +346,8 @@ void sensor_start()
     DEBUG("Sensor started.\n");
 }
 
-void sensor_stop() {
+void sensor_stop()
+{
     DEBUG("* Stopping worker_thread\n");
 
     running = false;
@@ -338,4 +380,8 @@ void sensor_close()
     {
         iio_context_destroy(ctx);
     }
+
+    free(samples_output);
+
+    pthread_mutex_destroy(&callback_mutex);
 }

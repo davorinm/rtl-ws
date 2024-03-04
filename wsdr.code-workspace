@@ -29,7 +29,8 @@
 			"stdint.h": "c",
 			"list.h": "c",
 			"typeinfo": "c",
-			"chrono": "c"
+			"chrono": "c",
+			"dsp_common.h": "c"
 		},
 		"makefile.launchConfigurations": [
 			{

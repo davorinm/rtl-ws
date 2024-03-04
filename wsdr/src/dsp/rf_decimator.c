@@ -3,9 +3,10 @@
 #include <pthread.h>
 #include <math.h>
 
-#include "decimator.h"
+#include "rf_decimator.h"
 #include "resample.h"
 #include "cic_decimate.h"
+#include "../tools/list.h"
 #include "../tools/helpers.h"
 
 #define INTERNAL_BUF_LEN_MS 100
@@ -13,9 +14,9 @@
 struct rf_decimator
 {
     pthread_mutex_t mutex;
-    rf_decimator_callback callback;
+    struct list *callback_list;
 
-    int sample_rate;
+    double sample_rate;
     int down_factor;
 
     cmplx_s32 *input_signal;
@@ -28,12 +29,26 @@ struct rf_decimator
     struct cic_delay_line delay;
 };
 
-rf_decimator *decimator_init(rf_decimator_callback callback)
+static void callback_notifier(void *callback, void *decim)
+{
+    rf_decimator_callback f = (rf_decimator_callback)callback;
+    rf_decimator *d = (rf_decimator *)decim;
+    f(d->resampled_signal, d->resampled_signal_len);
+}
+
+rf_decimator *rf_decimator_alloc()
 {
     rf_decimator *d = (rf_decimator *)calloc(1, sizeof(rf_decimator));
     pthread_mutex_init(&(d->mutex), NULL);
-    d->callback = callback;
+    d->callback_list = list_alloc();
     return d;
+}
+
+void rf_decimator_add_callback(rf_decimator *d, rf_decimator_callback callback)
+{
+    pthread_mutex_lock(&(d->mutex));
+    list_add(d->callback_list, callback);
+    pthread_mutex_unlock(&(d->mutex));
 }
 
 int rf_decimator_set_parameters(rf_decimator *d, int sample_rate, int down_factor)
@@ -63,7 +78,7 @@ int rf_decimator_set_parameters(rf_decimator *d, int sample_rate, int down_facto
     return r;
 }
 
-int rf_decimator_decimate(rf_decimator *d, const cmplx_s32 *complex_signal, int len)
+int rf_decimator_decimate_cmplx_s32(rf_decimator *d, const cmplx_s32 *complex_signal, int len)
 {
     int current_idx = 0;
     int remaining = len;
@@ -74,9 +89,7 @@ int rf_decimator_decimate(rf_decimator *d, const cmplx_s32 *complex_signal, int 
     block_size = d->input_signal_len - d->surplus;
 
     if (d->resampled_signal == NULL || d->input_signal == NULL)
-    {
         return -1;
-    }
 
     while (remaining >= block_size)
     {
@@ -86,13 +99,11 @@ int rf_decimator_decimate(rf_decimator *d, const cmplx_s32 *complex_signal, int 
 
         if (cic_decimate(d->down_factor, d->input_signal, d->input_signal_len, d->resampled_signal, d->resampled_signal_len, &(d->delay)))
         {
-            ERROR("Error while decimating signal\n");
+            ERROR("Error while decimating signal");
             return -2;
         }
 
-        // Callback
-        rf_decimator_callback f = (rf_decimator_callback) d->callback;
-        f(d->resampled_signal, d->resampled_signal_len);
+        list_apply2(d->callback_list, callback_notifier, d);
 
         d->surplus = 0;
         block_size = d->input_signal_len;
@@ -108,10 +119,18 @@ int rf_decimator_decimate(rf_decimator *d, const cmplx_s32 *complex_signal, int 
     return 0;
 }
 
+void rf_decimator_remove_callbacks(rf_decimator *d)
+{
+    pthread_mutex_lock(&(d->mutex));
+    list_clear(d->callback_list);
+    pthread_mutex_unlock(&(d->mutex));
+}
+
 void rf_decimator_free(rf_decimator *d)
 {
-    d->callback = NULL;
+    rf_decimator_remove_callbacks(d);
     pthread_mutex_destroy(&(d->mutex));
+    list_free(d->callback_list);
     free(d->input_signal);
     free(d->resampled_signal);
     free(d);

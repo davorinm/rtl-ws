@@ -58,7 +58,7 @@ static void ws_update_spectrum(struct mg_connection *c)
     timer_start(&time);
 
     // Write spectrum
-    nn = dsp_spectrum_get_payload(ws_data_buffer + n, WS_BUFFER_SIZE - n);
+    nn = dsp_spectrum_payload(ws_data_buffer + n, WS_BUFFER_SIZE - n);
 
     timer_end(&time, &time_spent);
     timer_log("PAYLOAD", time_spent);
@@ -98,8 +98,6 @@ static void ws_update_audio(struct mg_connection *c)
     {
         ERROR("Writing failed, error code == %d\n", nnn);
     }
-
-    INFO("Audio header size %d, audio size %d, audio buffer size %d, socet size %d\n", n, nn, n + nn, nnn);
 }
 
 static void ws_stats_data(struct mg_connection *c)

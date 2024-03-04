@@ -2,10 +2,15 @@
 #define SIGNAL_SOURCE_H
 
 #include <stdint.h>
-#include <complex.h>
-#include <fftw3.h>
+
+#include "../dsp/dsp_common.h"
+
+typedef void (*signal_source_callback)(const cmplx_s32 *, int);
 
 int sensor_init();
+
+void signal_source_add_callback(signal_source_callback callback);
+void signal_source_remove_callback();
 
 uint32_t sensor_get_freq();
 int sensor_set_frequency(uint32_t f);
