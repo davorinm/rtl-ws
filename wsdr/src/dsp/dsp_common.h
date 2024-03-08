@@ -6,7 +6,6 @@
 #include <math.h>
 #include <complex.h>
 
-
 typedef double complex cmplx_dbl;
 
 #define add_cmplx_s32(a, b, result) result = a + b;

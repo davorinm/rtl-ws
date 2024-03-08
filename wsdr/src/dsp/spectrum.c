@@ -10,7 +10,7 @@
 #include "spectrum.h"
 #include "dsp_common.h"
 
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 // Size
 static unsigned int sensor_samples;
@@ -45,17 +45,10 @@ void spectrum_process(const cmplx_dbl *signal, unsigned int len)
 
     pthread_mutex_lock(&spectrum_mutex);
 
-    for (i = 0; i < sensor_samples; i++)
-    {
-        // TODO: Optmize in one call
-        input[i] = signal[i];
-        // input[i][0] = (real_cmplx_s32(signal[i]));
-        // input[i][1] = (imag_cmplx_s32(signal[i]));
-    }
+    memcpy(input, signal, sensor_samples);
 
     fftw_execute(plan_forward);
 
-    // TODO: make shift
     double value = 0;
     unsigned int j = sensor_samples / 2;
     for (i = 0; i < sensor_samples; i++)
@@ -64,9 +57,13 @@ void spectrum_process(const cmplx_dbl *signal, unsigned int len)
 
         power_spectrum[j] = value;
 
-        if (j >= sensor_samples - 1) {
+        // Shift
+        if (j >= sensor_samples - 1)
+        {
             j = 0;
-        } else {
+        }
+        else
+        {
             j++;
         }
     }
@@ -106,6 +103,9 @@ int spectrum_payload(char *buf, unsigned int buf_len)
 
 void spectrum_close()
 {
-    fftw_free(output);
+    free(power_spectrum);
     fftw_destroy_plan(plan_forward);
+    fftw_free(input);
+    fftw_free(output);
+    pthread_mutex_destroy(&spectrum_mutex);
 }
