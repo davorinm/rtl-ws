@@ -193,7 +193,7 @@ function spectrumDownListener(e) {
 
     const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
     const selected_freq = real_samplerate * selectedProportion;
-    const filter_freq = selected_freq + real_frequency;
+    const filter_freq = selected_freq + real_frequency - (real_samplerate / 2);
 
     spectrumFilterStartHz = filter_freq;
     spectrumFilterWidthHz = null;
@@ -213,7 +213,7 @@ function spectrumMoveListener(e) {
 
     const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
     const selected_freq = real_samplerate * selectedProportion;
-    const filter_freq = selected_freq + real_frequency;
+    const filter_freq = selected_freq + real_frequency - (real_samplerate / 2);
 
     spectrumFilterWidthHz = filter_freq - spectrumFilterStartHz;
 
@@ -231,7 +231,7 @@ function spectrumUpListener(e) {
 
     const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
     const selected_freq = real_samplerate * selectedProportion;
-    const filter_freq = selected_freq + real_frequency;
+    const filter_freq = selected_freq + real_frequency - (real_samplerate / 2);
 
     spectrumFilterWidthHz = filter_freq - spectrumFilterStartHz;
 
@@ -257,7 +257,7 @@ function waterfallDownListener(e) {
 
     const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
     const selected_freq = real_samplerate * selectedProportion;
-    const filter_freq = selected_freq + real_frequency;
+    const filter_freq = selected_freq + real_frequency - (real_samplerate / 2);
 
     spectrumFilterStartHz = filter_freq;
     spectrumFilterWidthHz = null;
@@ -277,7 +277,7 @@ function waterfallMoveListener(e) {
 
     const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
     const selected_freq = real_samplerate * selectedProportion;
-    const filter_freq = selected_freq + real_frequency;
+    const filter_freq = selected_freq + real_frequency - (real_samplerate / 2);
 
     spectrumFilterWidthHz = filter_freq - spectrumFilterStartHz;
 
@@ -295,7 +295,7 @@ function waterfallUpListener(e) {
 
     const selectedProportion = elementRelativeX / spectrumCanvas.clientWidth;
     const selected_freq = real_samplerate * selectedProportion;
-    const filter_freq = selected_freq + real_frequency;
+    const filter_freq = selected_freq + real_frequency - (real_samplerate / 2);
 
     spectrumFilterWidthHz = filter_freq - spectrumFilterStartHz;
 
@@ -519,7 +519,7 @@ function drawFilter() {
     spectrumFilterCtx.clearRect(0, 0, bw, bh);
 
     // Calculate start position
-    let jjj = spectrumFilterStartHz - real_frequency;
+    let jjj = spectrumFilterStartHz - real_frequency + (real_samplerate / 2);
     let jjj1 = jjj / real_samplerate;
     let jjj2 = spectrumCanvas.clientWidth * jjj1;
 
@@ -538,7 +538,7 @@ function drawFilter() {
     spectrumFilterCtx.stroke();
 
     // Calculate end position
-    let iii = spectrumFilterStartHz - real_frequency + spectrumFilterWidthHz;
+    let iii = spectrumFilterStartHz - real_frequency + spectrumFilterWidthHz + (real_samplerate / 2);
     let iii1 = iii / real_samplerate;
     let iii2 = spectrumCanvas.clientWidth * iii1;
 
@@ -584,37 +584,44 @@ function drawFrequencyBands() {
 
     const textVerticalPosition = bh / 2;
 
-    let freq = ((real_frequency) / 1000000).toFixed(2);
+    // 1
+    let freq = ((real_frequency - real_bandwidth / 2) / 1000000).toFixed(2);
     let freqtext = freq + " MHz";
     let w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, 0, textVerticalPosition);
 
-    freq = ((real_frequency + real_bandwidth / 6 * 1) / 1000000).toFixed(2);
+    // 2
+    freq = ((real_frequency - real_bandwidth / 3) / 1000000).toFixed(2);
     freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, (bw / 6 * 1) - (w / 2), textVerticalPosition);
 
-    freq = ((real_frequency + real_bandwidth / 6 * 2) / 1000000).toFixed(2);
+    // 3
+    freq = ((real_frequency - real_bandwidth / 4) / 1000000).toFixed(2);
     freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, (bw / 6 * 2) - (w / 2), textVerticalPosition);
 
-    freq = ((real_frequency + real_bandwidth / 2) / 1000000).toFixed(2);
+    // 4
+    freq = ((real_frequency) / 1000000).toFixed(2);
     freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, (bw / 2) - (w / 2), textVerticalPosition);
 
-    freq = ((real_frequency + real_bandwidth / 6 * 4) / 1000000).toFixed(2);
+    // 5
+    freq = ((real_frequency + real_bandwidth / 4) / 1000000).toFixed(2);
     freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, (bw / 6 * 4) - (w / 2), textVerticalPosition);
 
-    freq = ((real_frequency + real_bandwidth / 6 * 5) / 1000000).toFixed(2);
+    // 6
+    freq = ((real_frequency + real_bandwidth / 3) / 1000000).toFixed(2);
     freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, (bw / 6 * 5) - (w / 2), textVerticalPosition);
 
-    freq = ((real_frequency + real_bandwidth) / 1000000).toFixed(2);
+    // 7
+    freq = ((real_frequency + real_bandwidth / 2) / 1000000).toFixed(2);
     freqtext = freq + " MHz";
     w = bandCtx.measureText(freqtext).width;
     bandCtx.fillText(freqtext, bw - w, textVerticalPosition);
