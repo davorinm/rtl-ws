@@ -50,14 +50,14 @@ int main(int argc, char **argv)
         web_poll();
     }
 
+    INFO("Closing sensor\n");
+    sensor_close();
+
     INFO("Closing web context\n");
     web_close();
 
     INFO("Closing dsp\n");
     dsp_close();
-
-    INFO("Closing sensor\n");
-    sensor_close();
 
     return 0;
 }

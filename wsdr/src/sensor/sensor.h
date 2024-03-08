@@ -5,7 +5,7 @@
 
 #include "../dsp/dsp_common.h"
 
-typedef void (*signal_source_callback)(const cmplx_s32 *, int);
+typedef void (*signal_source_callback)(const cmplx_dbl *, int);
 
 int sensor_init();
 

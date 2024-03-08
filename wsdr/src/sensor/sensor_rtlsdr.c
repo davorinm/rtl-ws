@@ -6,6 +6,7 @@
 #include <rtl-sdr.h>
 
 #include <math.h>
+#include <complex.h>
 
 #include <stdbool.h>
 
@@ -28,7 +29,7 @@ typedef struct rtl_dev
 static rtl_dev_t *dev = NULL;
 
 static uint8_t *buf = NULL;
-static cmplx_s32 *samples_output;
+static cmplx_dbl *samples_output;
 
 // Thread
 static pthread_t worker_thread;
@@ -65,20 +66,13 @@ static int sensor_loop()
 
     // convert buffer from IQ to complex
     int i;
-    int n = 0;
-    for (i = 0; i < samples_read; i += 2)
+    int n;
+    for (i = 0, n = 0; i < samples_read; i += 2, n++)
     {
-        // in_c[n] = ((buf[i] + I * buf[i + 1]) - 127) / 127; TODO: use double, divide with 127
-        samples_output[n].p.re = (int32_t)buf[i] - 128;
-        samples_output[n].p.im = (int32_t)buf[i + 1] - 128;
+        const int8_t real = (int8_t)buf[i]; // Real (I)
+        const int8_t imag = (int8_t)buf[i + 1]; // Imag (Q)
 
-
-
-        // __real__ in_c[n] = (double)buf[i] / 127; // sample is 127 for zero signal,so 127 +/-127
-        // __imag__ in_c[n] = (double)buf[i + 1] / 127;
-        // printf("%f + %f\n", __real__  in[i], __imag__ in[i]);
-        // Increment samples_output pointer
-        n++;
+        samples_output[n] = (real + I * imag) / 128;
     }
 
     return 0;
@@ -136,7 +130,7 @@ int sensor_init()
 
     // Buffers
     buf = calloc(1, dev->samples * sizeof(uint8_t) * 2);
-    samples_output = calloc(1, dev->samples * sizeof(cmplx_s32));
+    samples_output = calloc(1, dev->samples * sizeof(cmplx_dbl));
 
     // Lock
     pthread_mutex_init(&callback_mutex, NULL);

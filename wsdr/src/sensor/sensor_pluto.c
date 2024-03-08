@@ -6,6 +6,7 @@
 #include <iio.h>
 
 #include <math.h>
+#include <complex.h>
 
 #include <time.h>
 #include <sys/time.h>
@@ -29,7 +30,7 @@ struct sensor_config config;
 struct iio_device *rx;
 
 // Buffer
-static cmplx_s32 *samples_output;
+static cmplx_dbl *samples_output;
 
 // Thread
 static pthread_t worker_thread;
@@ -38,6 +39,12 @@ static bool running = false;
 // Callback
 static signal_source_callback callback_function;
 static pthread_mutex_t callback_mutex;
+
+// Loop
+static ssize_t nbytes_rx;
+static char *p_dat, *p_end;
+static ptrdiff_t p_inc;
+static unsigned int cnt;
 
 static void signal_source_callback_notifier()
 {
@@ -53,11 +60,6 @@ static void signal_source_callback_notifier()
 
 static int sensor_loop()
 {
-    ssize_t nbytes_rx;
-    char *p_dat, *p_end;
-    ptrdiff_t p_inc;
-    unsigned int cnt;
-
     // Refill RX buffer
     nbytes_rx = iio_buffer_refill(rxbuf);
     if (nbytes_rx < 0)
@@ -66,22 +68,17 @@ static int sensor_loop()
         return -1;
     }
 
-    // DEBUG("Refilling buf with %d bytes\n", (int)nbytes_rx);
-
     // READ: Get pointers to RX buf and read IQ from RX buf port 0
     p_inc = iio_buffer_step(rxbuf);
     p_end = iio_buffer_end(rxbuf);
 
+    // Fill output buffer
     for (cnt = 0, p_dat = (char *)iio_buffer_first(rxbuf, rx0_i); p_dat < p_end; p_dat += p_inc, cnt++)
     {
         const int16_t real = ((int16_t *)p_dat)[0]; // Real (I)
         const int16_t imag = ((int16_t *)p_dat)[1]; // Imag (Q)
 
-        // in_c[cnt] = (real + I * imag) / 2048;
-        // TODO: Make real cplx number
-
-        samples_output[cnt].p.re = (int32_t)real - 2048;
-        samples_output[cnt].p.im = (int32_t)imag - 2048;
+        samples_output[cnt] = (real + I * imag) / 2048;
     }
 
     return 0;
@@ -137,7 +134,7 @@ int sensor_init()
     config.lo_hz = MHZ(100);       // 2.5 GHz rf frequency
 
     // Buffer
-    samples_output = calloc(1, config.buffer_size * sizeof(cmplx_s32));
+    samples_output = calloc(1, config.buffer_size * sizeof(cmplx_dbl));
 
     // Lock
     pthread_mutex_init(&callback_mutex, NULL);

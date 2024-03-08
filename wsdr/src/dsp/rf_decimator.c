@@ -5,25 +5,23 @@
 
 #include "rf_decimator.h"
 #include "resample.h"
-#include "cic_decimate.h"
+#include "rf_cic_decimate.h"
 #include "../tools/list.h"
 #include "../tools/helpers.h"
-
-#define INTERNAL_BUF_LEN_MS 100
 
 struct rf_decimator
 {
     pthread_mutex_t mutex;
     struct list *callback_list;
 
-    double sample_rate;
+    int sample_rate;
     int down_factor;
 
-    cmplx_s32 *input_signal;
+    cmplx_dbl *input_signal;
     int input_signal_len;
     int surplus;
 
-    cmplx_s32 *resampled_signal;
+    cmplx_dbl *resampled_signal;
     int resampled_signal_len;
 
     struct cic_delay_line delay;
@@ -51,7 +49,7 @@ void rf_decimator_add_callback(rf_decimator *d, rf_decimator_callback callback)
     pthread_mutex_unlock(&(d->mutex));
 }
 
-int rf_decimator_set_parameters(rf_decimator *d, int sample_rate, int down_factor)
+int rf_decimator_set_parameters(rf_decimator *d, int sample_rate, int buffer_size, int down_factor)
 {
     int r = -1;
 
@@ -63,11 +61,11 @@ int rf_decimator_set_parameters(rf_decimator *d, int sample_rate, int down_facto
             DEBUG("Setting RF decimator params: sample_rate == %d, down_factor == %d\n", sample_rate, down_factor);
             d->sample_rate = sample_rate;
             d->down_factor = down_factor;
-            d->resampled_signal_len = (int)((d->sample_rate / d->down_factor) * INTERNAL_BUF_LEN_MS / 1000);
+            d->resampled_signal_len = 20000;
             d->input_signal_len = d->resampled_signal_len * d->down_factor;
 
-            d->resampled_signal = (cmplx_s32 *)realloc(d->resampled_signal, d->resampled_signal_len * sizeof(cmplx_s32));
-            d->input_signal = (cmplx_s32 *)realloc(d->input_signal, d->input_signal_len * sizeof(cmplx_s32));
+            d->resampled_signal = (cmplx_dbl *)realloc(d->resampled_signal, d->resampled_signal_len * sizeof(cmplx_dbl));
+            d->input_signal = (cmplx_dbl *)realloc(d->input_signal, d->input_signal_len * sizeof(cmplx_dbl));
 
             d->surplus = 0;
         }
@@ -78,8 +76,9 @@ int rf_decimator_set_parameters(rf_decimator *d, int sample_rate, int down_facto
     return r;
 }
 
-int rf_decimator_decimate_cmplx_s32(rf_decimator *d, const cmplx_s32 *complex_signal, int len)
+int rf_decimator_decimate(rf_decimator *d, const cmplx_dbl *complex_signal, int len)
 {
+    int ret;
     int current_idx = 0;
     int remaining = len;
     int block_size = 0;
@@ -93,13 +92,14 @@ int rf_decimator_decimate_cmplx_s32(rf_decimator *d, const cmplx_s32 *complex_si
 
     while (remaining >= block_size)
     {
-        memcpy(&(d->input_signal[d->surplus]), &(complex_signal[current_idx]), block_size * sizeof(cmplx_s32));
+        memcpy(&(d->input_signal[d->surplus]), &(complex_signal[current_idx]), block_size * sizeof(cmplx_dbl));
         remaining -= block_size;
         current_idx += block_size;
 
-        if (cic_decimate(d->down_factor, d->input_signal, d->input_signal_len, d->resampled_signal, d->resampled_signal_len, &(d->delay)))
+        ret = cic_decimate(d->down_factor, d->input_signal, d->input_signal_len, d->resampled_signal, d->resampled_signal_len, &(d->delay));
+        if (ret)
         {
-            ERROR("Error while decimating signal");
+            ERROR("Error while decimating signal %d\n", ret);
             return -2;
         }
 
@@ -111,7 +111,7 @@ int rf_decimator_decimate_cmplx_s32(rf_decimator *d, const cmplx_s32 *complex_si
 
     if (remaining > 0)
     {
-        memcpy(&(d->input_signal[d->surplus]), &(complex_signal[len - remaining]), remaining * sizeof(cmplx_s32));
+        memcpy(&(d->input_signal[d->surplus]), &(complex_signal[len - remaining]), remaining * sizeof(cmplx_dbl));
         d->surplus += remaining;
     }
     pthread_mutex_unlock(&(d->mutex));
@@ -128,8 +128,8 @@ void rf_decimator_remove_callbacks(rf_decimator *d)
 
 void rf_decimator_free(rf_decimator *d)
 {
-    rf_decimator_remove_callbacks(d);
     pthread_mutex_destroy(&(d->mutex));
+    rf_decimator_remove_callbacks(d);
     list_free(d->callback_list);
     free(d->input_signal);
     free(d->resampled_signal);

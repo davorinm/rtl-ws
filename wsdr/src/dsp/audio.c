@@ -88,7 +88,7 @@ int audio_get_audio_payload(char *buf, int buf_len)
     return copied_samples * sizeof(float);
 }
 
-void audio_fm_demodulator(const cmplx_s32 *signal, int len)
+void audio_fm_demodulator(const cmplx_dbl *signal, int len)
 {
     static const float scale = 1;
     static float delay_line_1[HALF_BAND_N - 1] = {0};

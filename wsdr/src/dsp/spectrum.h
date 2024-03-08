@@ -4,13 +4,13 @@
 #include <stdint.h>
 #include "dsp_common.h"
 
-void spectrum_init();
+void spectrum_init(unsigned int sensor_count);
 
-void spectrum_process(const cmplx_s32 *signal, int len);
+void spectrum_process(const cmplx_dbl *signal, unsigned int len);
 
 int spectrum_available();
 
-int spectrum_payload(char *buf, int buf_len);
+int spectrum_payload(char *buf, unsigned int buf_len);
 
 void spectrum_close();
 

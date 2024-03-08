@@ -4,30 +4,18 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
+#include <complex.h>
 
-typedef union
-{
-    int64_t bulk;
-    struct p
-    {
-        int32_t re;
-        int32_t im;
-    } p;
-} cmplx_s32;
 
-#define set_cmplx_s32(dst, src) dst.bulk = src.bulk;
+typedef double complex cmplx_dbl;
 
-#define add_cmplx_s32(a, b, result) \
-    result.p.re = a.p.re + b.p.re;  \
-    result.p.im = a.p.im + b.p.im;
+#define add_cmplx_s32(a, b, result) result = a + b;
 
-#define sub_cmplx_s32(a, b, result) \
-    result.p.re = a.p.re - b.p.re;  \
-    result.p.im = a.p.im - b.p.im;
+#define sub_cmplx_s32(a, b, result) result = a - b;
 
-#define real_cmplx_s32(c) (c.p.re)
+#define real_cmplx_s32(c) creal(c)
 
-#define imag_cmplx_s32(c) (c.p.im)
+#define imag_cmplx_s32(c) cimag(c)
 
 static inline float atan2_approx(float y, float x)
 {

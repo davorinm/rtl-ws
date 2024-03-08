@@ -10,8 +10,7 @@ let real_rfgain = 0;
 let real_spectrumSamples = 2048;
 
 let sound_on = false;
-let samplesProcessorNode;
-let audioContext;
+let audioPlayer;
 
 let spectrumRange = [5, -105];
 
@@ -108,7 +107,7 @@ function connect() {
             else if (firstChar == 'A') {
                 // Audio
                 const audioArray = new Float32Array(msg.data, 4);
-                samplesProcessorNode.port.postMessage(audioArray);
+                audioPlayer.feed(audioArray);
             }
             else if (firstChar == 'T') {
                 // Tuner
@@ -778,26 +777,27 @@ function kill() {
     socket_lm.send("kill");
 }
 
-async function initialize_sound() {
-    audioContext = new AudioContext({ sampleRate: 44100 });
-    await audioContext.audioWorklet.addModule("samples-processor.js");
-
-    samplesProcessorNode = new AudioWorkletNode(audioContext, "samples-processor");
-}
-
-async function toggle_sound() {
+function toggle_sound() {
     var value = document.getElementById("toggle_sound").value;
     socket_lm.send(value);
 
     if (value == "start_audio") {
         sound_on = true;
         document.getElementById("toggle_sound").value = "stop_audio";
-        await initialize_sound();
-        samplesProcessorNode.connect(audioContext.destination);
+
+        // create player
+        audioPlayer = new PCMPlayer({
+            encoding: '32bitFloat',
+            channels: 1,
+            sampleRate: 48000,
+            flushingTime: 2000
+       });
     } else {
         sound_on = false;
         document.getElementById("toggle_sound").value = "start_audio";
-        samplesProcessorNode.disconnect();
+
+        // destroy player
+        audioPlayer.destroy();
     }
 }
 

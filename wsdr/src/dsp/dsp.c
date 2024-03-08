@@ -15,9 +15,9 @@
 
 static rf_decimator *decim = NULL;
 
-static void signal_cb(const cmplx_s32 *signal, int len)
+static void signal_cb(const cmplx_dbl *signal, int len)
 {
-    rf_decimator_decimate_cmplx_s32(decim, signal, len);
+    rf_decimator_decimate(decim, signal, len);
     spectrum_process(signal, len);
 }
 
@@ -27,11 +27,12 @@ void dsp_init()
     audio_init();
 
     unsigned int sample_rate = sensor_get_sample_rate();
+    unsigned int buffer_size = sensor_get_buffer_size();
 
     decim = rf_decimator_alloc();
-    rf_decimator_set_parameters(decim, sample_rate, sample_rate / DECIMATED_TARGET_BW_HZ);
+    rf_decimator_set_parameters(decim, sample_rate, buffer_size, sample_rate / DECIMATED_TARGET_BW_HZ);
 
-    spectrum_init();
+    spectrum_init(buffer_size);
 
     signal_source_add_callback(signal_cb);
 
@@ -70,10 +71,13 @@ int dsp_audio_payload(char *buf, int buf_len)
 
 void dsp_close()
 {
+    INFO("Remove callback\n");
     signal_source_remove_callback();
 
+    INFO("rf_decimator_free\n");
     rf_decimator_free(decim);
 
+    INFO("spectrum_close\n");
     spectrum_close();
 
     INFO("Closing audio processing...\n");
