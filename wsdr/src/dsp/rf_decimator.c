@@ -28,8 +28,8 @@ typedef struct rf_decimator
 
 static rf_decimator *decim = NULL;
 
-// static int processed_input = 0;
-// static int processed_output = 0;
+static int processed_input = 0;
+static int processed_output = 0;
 
 void rf_decimator_init(rf_decimator_callback callback)
 {
@@ -69,7 +69,6 @@ int rf_decimator_set_parameters(int sample_rate, int buffer_size, int target_rat
 
 int rf_decimator_decimate(const cmplx_dbl *complex_signal, int len)
 {
-    int ret;
     int current_idx = 0;
     int remaining = len;
     int block_size = 0;
@@ -87,12 +86,7 @@ int rf_decimator_decimate(const cmplx_dbl *complex_signal, int len)
         remaining -= block_size;
         current_idx += block_size;
 
-        ret = cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_len, decim->resampled_signal, decim->resampled_signal_len, &(decim->delay));
-        if (ret)
-        {
-            ERROR("Error while decimating signal %d\n", ret);
-            return -2;
-        }
+        cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_len, decim->resampled_signal, decim->resampled_signal_len, &(decim->delay), &processed_input, &processed_output);
 
         // Callbback
         decim->callback(decim->resampled_signal, decim->resampled_signal_len);

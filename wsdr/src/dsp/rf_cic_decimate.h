@@ -9,6 +9,6 @@ struct cic_delay_line
     cmplx_dbl comb_prev_in;
 };
 
-int cic_decimate(int R, const cmplx_dbl *src, int src_len, cmplx_dbl *dst, int dst_len, struct cic_delay_line *delay);
+void cic_decimate(int R, const cmplx_dbl *src, int src_len, cmplx_dbl *dst, int dst_len, struct cic_delay_line *delay, int *processed_input, int *processed_output);
 
 #endif
