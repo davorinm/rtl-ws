@@ -2,13 +2,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
-
+#include <unistd.h>
 #include <rtl-sdr.h>
 
 #include <math.h>
 #include <complex.h>
-
-#include <stdbool.h>
 
 #include "sensor.h"
 #include "../tools/helpers.h"
@@ -33,11 +31,10 @@ static cmplx_dbl *samples_output;
 
 // Thread
 static pthread_t worker_thread;
-static bool running = false;
+static int running = 0;
 
 // Callback
 static signal_source_callback callback_function;
-static pthread_mutex_t callback_mutex;
 
 static void signal_source_callback_notifier()
 {
@@ -46,9 +43,7 @@ static void signal_source_callback_notifier()
         return;
     }
 
-    pthread_mutex_lock(&callback_mutex);
     callback_function(samples_output, dev->samples);
-    pthread_mutex_unlock(&callback_mutex);
 }
 
 static int sensor_loop()
@@ -108,6 +103,8 @@ static void *worker(void *user)
 
         timer_end(&time, &time_spent);
         timer_log("PROCESSING", time_spent);
+
+        usleep(100);
     }
 
     DEBUG("Done reading signal from sensor\n");
@@ -131,9 +128,6 @@ int sensor_init()
     // Buffers
     buf = calloc(1, dev->samples * sizeof(uint8_t) * 2);
     samples_output = calloc(1, dev->samples * sizeof(cmplx_dbl));
-
-    // Lock
-    pthread_mutex_init(&callback_mutex, NULL);
 
     // Open
     DEBUG("rtlsdr_open...\n");
@@ -190,16 +184,12 @@ int sensor_init()
 
 void signal_source_add_callback(signal_source_callback callback)
 {
-    pthread_mutex_lock(&callback_mutex);
     callback_function = callback;
-    pthread_mutex_unlock(&callback_mutex);
 }
 
 void signal_source_remove_callback()
 {
-    pthread_mutex_lock(&callback_mutex);
     callback_function = NULL;
-    pthread_mutex_unlock(&callback_mutex);
 }
 
 uint32_t sensor_get_freq()
@@ -318,7 +308,7 @@ void sensor_start()
 {
     DEBUG("Starting...\n");
 
-    running = true;
+    running = 1;
     pthread_create(&worker_thread, NULL, worker, NULL);
 
     DEBUG("Sensor started.\n");
@@ -328,16 +318,17 @@ void sensor_stop()
 {
     DEBUG("* Stopping worker_thread\n");
 
-    running = false;
+    running = 0;
     pthread_join(worker_thread, NULL);
 }
 
 void sensor_close()
 {
+    DEBUG("* Stopping sensor\n");
+    sensor_stop();
+
     free(buf);
     free(samples_output);
-
-    pthread_mutex_destroy(&callback_mutex);
 
     DEBUG("sensor_close called with dev == %lx\n", (unsigned long)dev);
     if (dev->dev != NULL)

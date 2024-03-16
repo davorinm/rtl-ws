@@ -53,12 +53,14 @@ int rf_decimator_set_parameters(int sample_rate, int buffer_size, int target_rat
             DEBUG("Setting RF decimator params: sample_rate == %d, down_factor == %d\n", sample_rate, down_factor);
             decim->sample_rate = sample_rate;
             decim->down_factor = down_factor;
-            decim->output_signal_len = 20000;
+
+            decim->output_signal_len = target_rate;
             decim->input_signal_len = decim->output_signal_len * decim->down_factor;
 
             decim->output_signal = (cmplx_dbl *)realloc(decim->output_signal, decim->output_signal_len * sizeof(cmplx_dbl));
             decim->input_signal = (cmplx_dbl *)realloc(decim->input_signal, decim->input_signal_len * sizeof(cmplx_dbl));
 
+            decim->output_signal_count = 0;
             decim->input_signal_count = 0;
         }
         r = 0;
@@ -89,7 +91,7 @@ int rf_decimator_decimate(const cmplx_dbl *complex_signal, int complex_signal_le
 
         cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_len, decim->output_signal, decim->output_signal_len, &(decim->delay), &processed_input, &processed_output);
 
-        // Callbback
+        // Callback
         decim->callback(decim->output_signal, decim->output_signal_len);
 
         decim->input_signal_count = 0;

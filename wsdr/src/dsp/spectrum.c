@@ -9,8 +9,7 @@
 
 #include "spectrum.h"
 #include "dsp_common.h"
-
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#include "../tools/helpers.h"
 
 // Size
 static unsigned int sensor_samples;

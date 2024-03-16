@@ -99,7 +99,7 @@ void audio_fm_demodulator(const cmplx_dbl *signal, int len)
 
     if (demod_buffer_len != len)
     {
-        DEBUG("Reallocating demodulation and audio buffers\n");
+        DEBUG("Reallocating demodulation and audio buffers %d\n", len);
 
         demod_buffer_len = len;
         demod_buffer = (float *)realloc(demod_buffer, demod_buffer_len * sizeof(float));

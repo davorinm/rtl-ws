@@ -2,12 +2,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
-
 #include <iio.h>
-
+#include <unistd.h>
 #include <math.h>
 #include <complex.h>
-
 #include <time.h>
 #include <sys/time.h>
 
@@ -53,9 +51,7 @@ static void signal_source_callback_notifier()
         return;
     }
 
-    pthread_mutex_lock(&callback_mutex);
     callback_function(samples_output, config.buffer_size);
-    pthread_mutex_unlock(&callback_mutex);
 }
 
 static int sensor_loop()
@@ -113,6 +109,8 @@ static void *worker(void *user)
 
         timer_end(&time, &time_spent);
         timer_log("PROCESSING", time_spent);
+
+        usleep(100);
     }
 
     DEBUG("Done reading signal from sensor\n");
@@ -125,19 +123,16 @@ int sensor_init()
     int ret;
 
     // RX stream config
-	config.bw_hz = MHZ(10);             // 2 MHz rf bandwidth
-	config.fs_hz = MHZ(10);             // 2.5 MS/s rx sample rate
+	config.bw_hz = 2400000;             // 2 MHz rf bandwidth
+	config.fs_hz = 2400000;             // 2.5 MS/s rx sample rate
     config.gain_mode = 0;               // "manual fast_attack slow_attack hybrid" 
     config.gain = 60;                   // 0 dB gain
     config.rfport = "A_BALANCED";       // port A (select for rf freq.)
     config.buffer_size = 1024 * 8;      // Device samples buffer size
-    config.lo_hz = MHZ(100);       // 2.5 GHz rf frequency
+    config.lo_hz = 102800000;       // 2.5 GHz rf frequency
 
     // Buffer
     samples_output = calloc(1, config.buffer_size * sizeof(cmplx_dbl));
-
-    // Lock
-    pthread_mutex_init(&callback_mutex, NULL);
 
     DEBUG("* Acquiring IIO context\n");
     ctx = iio_create_default_context();
@@ -210,16 +205,12 @@ int sensor_init()
 
 void signal_source_add_callback(signal_source_callback callback)
 {
-    pthread_mutex_lock(&callback_mutex);
     callback_function = callback;
-    pthread_mutex_unlock(&callback_mutex);
 }
 
 void signal_source_remove_callback()
 {
-    pthread_mutex_lock(&callback_mutex);
     callback_function = NULL;
-    pthread_mutex_unlock(&callback_mutex);
 }
 
 uint32_t sensor_get_freq()
@@ -379,6 +370,4 @@ void sensor_close()
     }
 
     free(samples_output);
-
-    pthread_mutex_destroy(&callback_mutex);
 }
