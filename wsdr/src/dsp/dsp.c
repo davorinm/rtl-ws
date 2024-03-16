@@ -27,14 +27,12 @@ void dsp_init()
     unsigned int sample_rate = sensor_get_sample_rate();
     unsigned int buffer_size = sensor_get_buffer_size();
 
-    rf_decimator_alloc();
+    rf_decimator_init(audio_fm_demodulator);
     rf_decimator_set_parameters(sample_rate, buffer_size, sample_rate / DECIMATED_TARGET_BW_HZ);
 
     spectrum_init(buffer_size);
 
     signal_source_add_callback(signal_cb);
-
-    rf_decimator_add_callback(audio_fm_demodulator);
 }
 
 int dsp_spectrum_available()
