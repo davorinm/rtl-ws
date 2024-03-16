@@ -18,10 +18,11 @@ typedef struct rf_decimator
 
     cmplx_dbl *input_signal;
     int input_signal_len;
-    int surplus;
+    int input_signal_count;
 
-    cmplx_dbl *resampled_signal;
-    int resampled_signal_len;
+    cmplx_dbl *output_signal;
+    int output_signal_len;
+    int output_signal_count;
 
     struct cic_delay_line delay;
 } rf_decimator;
@@ -52,13 +53,13 @@ int rf_decimator_set_parameters(int sample_rate, int buffer_size, int target_rat
             DEBUG("Setting RF decimator params: sample_rate == %d, down_factor == %d\n", sample_rate, down_factor);
             decim->sample_rate = sample_rate;
             decim->down_factor = down_factor;
-            decim->resampled_signal_len = 20000;
-            decim->input_signal_len = decim->resampled_signal_len * decim->down_factor;
+            decim->output_signal_len = 20000;
+            decim->input_signal_len = decim->output_signal_len * decim->down_factor;
 
-            decim->resampled_signal = (cmplx_dbl *)realloc(decim->resampled_signal, decim->resampled_signal_len * sizeof(cmplx_dbl));
+            decim->output_signal = (cmplx_dbl *)realloc(decim->output_signal, decim->output_signal_len * sizeof(cmplx_dbl));
             decim->input_signal = (cmplx_dbl *)realloc(decim->input_signal, decim->input_signal_len * sizeof(cmplx_dbl));
 
-            decim->surplus = 0;
+            decim->input_signal_count = 0;
         }
         r = 0;
     }
@@ -67,38 +68,38 @@ int rf_decimator_set_parameters(int sample_rate, int buffer_size, int target_rat
     return r;
 }
 
-int rf_decimator_decimate(const cmplx_dbl *complex_signal, int len)
+int rf_decimator_decimate(const cmplx_dbl *complex_signal, int complex_signal_len)
 {
     int current_idx = 0;
-    int remaining = len;
+    int remaining = complex_signal_len;
     int block_size = 0;
 
     pthread_mutex_lock(&(decim->mutex));
 
-    block_size = decim->input_signal_len - decim->surplus;
+    block_size = decim->input_signal_len - decim->input_signal_count;
 
-    if (decim->resampled_signal == NULL || decim->input_signal == NULL)
+    if (decim->output_signal == NULL || decim->input_signal == NULL)
         return -1;
 
     while (remaining >= block_size)
     {
-        memcpy(&(decim->input_signal[decim->surplus]), &(complex_signal[current_idx]), block_size * sizeof(cmplx_dbl));
+        memcpy(&(decim->input_signal[decim->input_signal_count]), &(complex_signal[current_idx]), block_size * sizeof(cmplx_dbl));
         remaining -= block_size;
         current_idx += block_size;
 
-        cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_len, decim->resampled_signal, decim->resampled_signal_len, &(decim->delay), &processed_input, &processed_output);
+        cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_len, decim->output_signal, decim->output_signal_len, &(decim->delay), &processed_input, &processed_output);
 
         // Callbback
-        decim->callback(decim->resampled_signal, decim->resampled_signal_len);
+        decim->callback(decim->output_signal, decim->output_signal_len);
 
-        decim->surplus = 0;
+        decim->input_signal_count = 0;
         block_size = decim->input_signal_len;
     }
 
     if (remaining > 0)
     {
-        memcpy(&(decim->input_signal[decim->surplus]), &(complex_signal[len - remaining]), remaining * sizeof(cmplx_dbl));
-        decim->surplus += remaining;
+        memcpy(&(decim->input_signal[decim->input_signal_count]), &(complex_signal[complex_signal_len - remaining]), remaining * sizeof(cmplx_dbl));
+        decim->input_signal_count += remaining;
     }
     pthread_mutex_unlock(&(decim->mutex));
 
@@ -110,6 +111,6 @@ void rf_decimator_free()
     pthread_mutex_destroy(&(decim->mutex));
     decim->callback = NULL;
     free(decim->input_signal);
-    free(decim->resampled_signal);
+    free(decim->output_signal);
     free(decim);
 }
