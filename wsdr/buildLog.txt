@@ -117,3 +117,6 @@
 -rwxr-xr-x 1 root root 246904 Mar 16 18:47 build/wsdr
 -rwxr-xr-x@ 1 davorinmadaric  staff  250656 Mar 16 22:57 build/wsdr
 -rwxr-xr-x@ 1 davorinmadaric  staff  250472 Mar 16 23:05 build/wsdr
+-rwxr-xr-x@ 1 davorinmadaric  staff  250472 Mar 16 23:07 build/wsdr
+-rwxr-xr-x@ 1 davorinmadaric  staff  250472 Mar 16 23:16 build/wsdr
+-rwxr-xr-x@ 1 davorinmadaric  staff  250472 Mar 16 23:17 build/wsdr

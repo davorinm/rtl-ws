@@ -38,13 +38,15 @@ void rf_decimator_init(rf_decimator_callback callback)
     decim->callback = callback;
 }
 
-int rf_decimator_set_parameters(int sample_rate, int buffer_size, int down_factor)
+int rf_decimator_set_parameters(int sample_rate, int buffer_size, int target_rate)
 {
     int r = -1;
 
     pthread_mutex_lock(&(decim->mutex));
-    if (sample_rate > 0 && down_factor > 0)
+    if (sample_rate > 0 && target_rate > 0)
     {
+        int down_factor = sample_rate / target_rate;
+
         if (decim->sample_rate != sample_rate || decim->down_factor != down_factor)
         {
             DEBUG("Setting RF decimator params: sample_rate == %d, down_factor == %d\n", sample_rate, down_factor);
@@ -112,7 +114,7 @@ int rf_decimator_decimate(const cmplx_dbl *complex_signal, int len)
 void rf_decimator_free()
 {
     pthread_mutex_destroy(&(decim->mutex));
-    free(decim->callback);
+    decim->callback = NULL;
     free(decim->input_signal);
     free(decim->resampled_signal);
     free(decim);

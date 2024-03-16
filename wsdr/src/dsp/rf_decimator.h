@@ -5,9 +5,9 @@
 
 typedef void (*rf_decimator_callback)(const cmplx_dbl *, int);
 
-void rf_decimator_init();
+void rf_decimator_init(rf_decimator_callback callback);
 
-int rf_decimator_set_parameters(int sample_rate, int buffer_size, int down_factor);
+int rf_decimator_set_parameters(int sample_rate, int buffer_size, int target_rate);
 
 int rf_decimator_decimate(const cmplx_dbl *complex_signal, int len);
 
