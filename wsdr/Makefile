@@ -11,7 +11,7 @@ PPDEFS=-DRTL_WS_DEBUG
 CFLAGS=-I/usr/include
 
 # Platform
-PLUTO=1
+PLUTO=0
 
 # Embedding files
 EMBED_FILES=1

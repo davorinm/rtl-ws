@@ -13,11 +13,9 @@
 
 #define DECIMATED_TARGET_BW_HZ 192000
 
-static rf_decimator *decim = NULL;
-
 static void signal_cb(const cmplx_dbl *signal, int len)
 {
-    rf_decimator_decimate(decim, signal, len);
+    rf_decimator_decimate(signal, len);
     spectrum_process(signal, len);
 }
 
@@ -29,14 +27,14 @@ void dsp_init()
     unsigned int sample_rate = sensor_get_sample_rate();
     unsigned int buffer_size = sensor_get_buffer_size();
 
-    decim = rf_decimator_alloc();
-    rf_decimator_set_parameters(decim, sample_rate, buffer_size, sample_rate / DECIMATED_TARGET_BW_HZ);
+    rf_decimator_alloc();
+    rf_decimator_set_parameters(sample_rate, buffer_size, sample_rate / DECIMATED_TARGET_BW_HZ);
 
     spectrum_init(buffer_size);
 
     signal_source_add_callback(signal_cb);
 
-    rf_decimator_add_callback(decim, audio_fm_demodulator);
+    rf_decimator_add_callback(audio_fm_demodulator);
 }
 
 int dsp_spectrum_available()
@@ -75,7 +73,7 @@ void dsp_close()
     signal_source_remove_callback();
 
     INFO("rf_decimator_free\n");
-    rf_decimator_free(decim);
+    rf_decimator_free();
 
     INFO("spectrum_close\n");
     spectrum_close();

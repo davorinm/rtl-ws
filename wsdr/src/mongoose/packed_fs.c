@@ -4574,11 +4574,11 @@ static const struct packed_file {
   size_t size;
   time_t mtime;
 } packed_files[] = {
-  {"/resources/favicon.ico", v1, sizeof(v1), 1704206407},
-  {"/resources/icons_copyrights", v2, sizeof(v2), 1704206407},
-  {"/resources/index.html", v3, sizeof(v3), 1709466842},
-  {"/resources/pcm-player.js", v4, sizeof(v4), 1709467800},
-  {"/resources/rtl_ui.js", v5, sizeof(v5), 1709936566},
+  {"/resources/favicon.ico", v1, sizeof(v1), 1709940166},
+  {"/resources/icons_copyrights", v2, sizeof(v2), 1709940166},
+  {"/resources/index.html", v3, sizeof(v3), 1709940166},
+  {"/resources/pcm-player.js", v4, sizeof(v4), 1709940166},
+  {"/resources/rtl_ui.js", v5, sizeof(v5), 1709940166},
   {NULL, NULL, 0, 0}
 };
 
