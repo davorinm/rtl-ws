@@ -43,51 +43,6 @@ void audio_reset()
     pthread_mutex_unlock(&audio_mutex);
 }
 
-int audio_new_audio_available()
-{
-    if (full_audio_buffers == NULL)
-    {
-        return 0;
-    }
-
-    return list_length(full_audio_buffers) > 0;
-}
-
-int audio_get_audio_payload(char *buf, int buf_len)
-{
-    static int audio_buf_cur_idx = 0;
-    float *data = NULL;
-    int new_samples = 0;
-    int copied_samples = 0;
-    int buf_samples_remaining = buf_len / sizeof(float);
-
-    do
-    {
-        pthread_mutex_lock(&audio_mutex);
-        data = list_peek(full_audio_buffers);
-        if (data != NULL)
-        {
-            if (audio_buf_cur_idx >= audio_buffer_len)
-            {
-                list_poll_to_list(full_audio_buffers, used_audio_buffers);
-                audio_buf_cur_idx = 0;
-            }
-            new_samples = audio_buffer_len - audio_buf_cur_idx;
-            new_samples = (new_samples <= buf_samples_remaining) ? new_samples : buf_samples_remaining;
-            if (new_samples > 0)
-            {
-                memcpy(&(buf[copied_samples]), &(data[audio_buf_cur_idx]), new_samples * sizeof(float));
-                audio_buf_cur_idx += new_samples;
-                copied_samples += new_samples;
-                buf_samples_remaining -= new_samples;
-            }
-        }
-        pthread_mutex_unlock(&audio_mutex);
-    } while (data != NULL && buf_samples_remaining > 0);
-
-    return copied_samples * sizeof(float);
-}
-
 void audio_fm_demodulator(const cmplx_dbl *signal, int len)
 {
     static const float scale = 1;
@@ -158,6 +113,51 @@ void audio_fm_demodulator(const cmplx_dbl *signal, int len)
     }
 
     pthread_mutex_unlock(&audio_mutex);
+}
+
+int audio_new_audio_available()
+{
+    if (full_audio_buffers == NULL)
+    {
+        return 0;
+    }
+
+    return list_length(full_audio_buffers) > 0;
+}
+
+int audio_get_audio_payload(char *buf, int buf_len)
+{
+    static int audio_buf_cur_idx = 0;
+    float *data = NULL;
+    int new_samples = 0;
+    int copied_samples = 0;
+    int buf_samples_remaining = buf_len / sizeof(float);
+
+    do
+    {
+        pthread_mutex_lock(&audio_mutex);
+        data = list_peek(full_audio_buffers);
+        if (data != NULL)
+        {
+            if (audio_buf_cur_idx >= audio_buffer_len)
+            {
+                list_poll_to_list(full_audio_buffers, used_audio_buffers);
+                audio_buf_cur_idx = 0;
+            }
+            new_samples = audio_buffer_len - audio_buf_cur_idx;
+            new_samples = (new_samples <= buf_samples_remaining) ? new_samples : buf_samples_remaining;
+            if (new_samples > 0)
+            {
+                memcpy(&(buf[copied_samples]), &(data[audio_buf_cur_idx]), new_samples * sizeof(float));
+                audio_buf_cur_idx += new_samples;
+                copied_samples += new_samples;
+                buf_samples_remaining -= new_samples;
+            }
+        }
+        pthread_mutex_unlock(&audio_mutex);
+    } while (data != NULL && buf_samples_remaining > 0);
+
+    return copied_samples * sizeof(float);
 }
 
 void audio_close()

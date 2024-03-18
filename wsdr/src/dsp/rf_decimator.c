@@ -72,38 +72,45 @@ int rf_decimator_set_parameters(int sample_rate, int buffer_size, int target_rat
 
 int rf_decimator_decimate(const cmplx_dbl *complex_signal, int complex_signal_len)
 {
-    int current_idx = 0;
-    int remaining = complex_signal_len;
-    int block_size = 0;
-
     pthread_mutex_lock(&(decim->mutex));
 
-    block_size = decim->input_signal_len - decim->input_signal_count;
+    // Copy data to processing array
+    memcpy(decim->input_signal + decim->input_signal_count, complex_signal, complex_signal_len * sizeof(cmplx_dbl));
+    decim->input_signal_count += complex_signal_len;
 
-    if (decim->output_signal == NULL || decim->input_signal == NULL)
-        return -1;
+    pthread_mutex_unlock(&(decim->mutex));
 
-    while (remaining >= block_size)
+    // Process at least one output
+    if (decim->input_signal_count > decim->down_factor)
     {
-        memcpy(&(decim->input_signal[decim->input_signal_count]), &(complex_signal[current_idx]), block_size * sizeof(cmplx_dbl));
-        remaining -= block_size;
-        current_idx += block_size;
+        pthread_mutex_lock(&(decim->mutex));
 
-        cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_len, decim->output_signal, decim->output_signal_len, &(decim->delay), &processed_input, &processed_output);
+        // Cleanup
+        processed_input = 0;
+        processed_output = 0;
 
-        // Callback
+        // Dcimate
+        cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_count, decim->output_signal + decim->output_signal_count, decim->output_signal_len - decim->output_signal_count, &(decim->delay), &processed_input, &processed_output);
+
+        // Update input indexes
+        memcpy(decim->input_signal, decim->input_signal + processed_input, (decim->input_signal_count - processed_input) * sizeof(cmplx_dbl));
+        decim->input_signal_count -= processed_input;
+
+        // Update output indexes
+        decim->output_signal_count += processed_output;
+
+        pthread_mutex_unlock(&(decim->mutex));
+    }
+
+    // Can be processed, is full
+    if (decim->output_signal_len == decim->output_signal_count)
+    {
+        // DEBUG("cic_decimate output_signal_len %d\n", output_signal_len);
         decim->callback(decim->output_signal, decim->output_signal_len);
 
-        decim->input_signal_count = 0;
-        block_size = decim->input_signal_len;
+        // Clear
+        decim->output_signal_count = 0;
     }
-
-    if (remaining > 0)
-    {
-        memcpy(&(decim->input_signal[decim->input_signal_count]), &(complex_signal[complex_signal_len - remaining]), remaining * sizeof(cmplx_dbl));
-        decim->input_signal_count += remaining;
-    }
-    pthread_mutex_unlock(&(decim->mutex));
 
     return 0;
 }
