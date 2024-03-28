@@ -105,7 +105,7 @@ static void ws_stats_data(struct mg_connection *c)
     int n = 0, nnn = 0;
 
     // Set meta data
-    n = sprintf(ws_data_buffer, "Df %lf;b %lf;s %lf;g %lf", timer_avg("GATHERING"), timer_avg("PROCESSING"), timer_avg("PAYLOAD"), timer_avg("SENDING_WS"));
+    n = sprintf(ws_data_buffer, "Df %lf;b %lf;r %lf;g %lf;a %lf;s %lf", timer_avg("GATHERING"), timer_avg("PROCESSING"), timer_avg("PAYLOAD"), timer_avg("SENDING_WS"), timer_avg("AUDIO"), timer_avg("SPECTRUM"));
 
     DEBUG("ws_stats_data %s\n", ws_data_buffer);
 

@@ -24,6 +24,8 @@ static pthread_mutex_t spectrum_mutex;
 static double *power_spectrum;
 static int new_spectrum_available = 0;
 
+#define N 100
+
 void spectrum_init(unsigned int sensor_count)
 {
     sensor_samples = sensor_count;
@@ -54,10 +56,11 @@ void spectrum_process(const cmplx_dbl *signal, unsigned int len)
     {
         value = 10 * log10((creal(output[i]) * creal(output[i]) + cimag(output[i]) * cimag(output[i])) / buffer_size_squared);
 
-        power_spectrum[j] = value;
+        power_spectrum[j] -= power_spectrum[j] / N;
+        power_spectrum[j] += value / N;
 
         // Shift
-        if (j >= sensor_samples - 1)
+        if (j > sensor_samples)
         {
             j = 0;
         }

@@ -164,6 +164,13 @@ function connect() {
                     drawGrid();
                 }
             }
+            else if (firstChar == 'D') {
+                const bytearray = new Uint8Array(msg.data, 1);
+                const strData = String.fromCharCode(...bytearray);
+                const j = strData.split(';');
+            
+                document.getElementById("statusArea").textContent = strData;
+            }
         }
 
         socket_lm.onclose = function () {

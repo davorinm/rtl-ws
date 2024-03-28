@@ -10,13 +10,28 @@
 #include "audio.h"
 #include "../tools/helpers.h"
 #include "../sensor/sensor.h"
+#include "../tools/timer.h"
 
-#define DECIMATED_TARGET_BW_HZ 192000
+#define DECIMATED_TARGET_BW_HZ 48000 * 2
 
 static void signal_cb(const cmplx_dbl *signal, int len)
-{
+{    
+static struct timespec time;
+static double time_spent;
+
+    timer_start(&time);
+    
     rf_decimator_decimate(signal, len);
+        
+    timer_end(&time, &time_spent);
+    timer_log("AUDIO", time_spent);
+        
+    timer_start(&time);
+
     spectrum_process(signal, len);
+        
+    timer_end(&time, &time_spent);
+    timer_log("SPECTRUM", time_spent);
 }
 
 void dsp_init()
@@ -47,12 +62,12 @@ int dsp_spectrum_payload(char *buf, int buf_len)
 
 void dsp_audio_start()
 {
-    audio_reset();
+    audio_start();
 }
 
 void dsp_audio_stop()
 {
-    audio_reset();
+    audio_stop();
 }
 
 int dsp_audio_available()

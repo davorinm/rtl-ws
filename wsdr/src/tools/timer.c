@@ -99,23 +99,14 @@ void timer_end(struct timespec *begin, double *time_spent)
     *time_spent = (end.tv_sec - begin->tv_sec) + (end.tv_nsec - begin->tv_nsec) / BILLION;
 }
 
-#define DATA_COUNT 100
+#define N 100
 
-double gathering_data[DATA_COUNT] = {0};
-int gathering_index = 0;
 double gathering_avg = 0;
-
-double processing_data[DATA_COUNT] = {0};
-int processing_index = 0;
 double processing_avg = 0;
-
-double payload_data[DATA_COUNT] = {0};
-int payload_index = 0;
 double payload_avg = 0;
-
-double sending_data[DATA_COUNT] = {0};
-int sending_index = 0;
 double sending_avg = 0;
+double audio_avg = 0;
+double spectrum_avg = 0;
 
 double timer_avg(char *key) {
     if (strcmp(key, "GATHERING") == 0)
@@ -134,86 +125,50 @@ double timer_avg(char *key) {
     {
         return sending_avg;
     }
+    else if (strcmp(key, "AUDIO") == 0)
+    {
+        return audio_avg;
+    }
+    else if (strcmp(key, "SPECTRUM") == 0)
+    {
+        return spectrum_avg;
+    }
 
     return 0;
 }
 
 void timer_log(char *key, double value)
 {
-    // DEBUG("Time elpased for %s is %f seconds\n", key, value);
-
     int i;
 
     if (strcmp(key, "GATHERING") == 0)
     {
-        gathering_data[gathering_index++] = value;
-
-        if (gathering_index >= DATA_COUNT) {
-            // Calc avg
-            double sum = 0;
-            for (i = 0; i < DATA_COUNT; i++) {
-                sum += gathering_data[i];
-            }
-
-            gathering_avg = sum / DATA_COUNT;
-            // DEBUG("Avg for %s is %f seconds\n", key, gathering_avg);
-
-            // Reset index
-            gathering_index = 0;
-        }
+        gathering_avg -= gathering_avg / N;
+        gathering_avg += value / N;
     }
     else if (strcmp(key, "PROCESSING") == 0)
     {
-        processing_data[processing_index++] = value;
-
-        if (processing_index >= DATA_COUNT) {
-            // Calc avg
-            double sum = 0;
-            for (i = 0; i < DATA_COUNT; i++) {
-                sum += processing_data[i];
-            }
-
-            processing_avg = sum / DATA_COUNT;
-            // DEBUG("Avg for %s is %f seconds\n", key, processing_avg);
-
-            // Reset index
-            processing_index = 0;
-        }
+        processing_avg -= processing_avg / N;
+        processing_avg += value / N;
     }
     else if (strcmp(key, "PAYLOAD") == 0)
     {
-        payload_data[payload_index++] = value;
-
-        if (payload_index >= DATA_COUNT) {
-            // Calc avg
-            double sum = 0;
-            for (i = 0; i < DATA_COUNT; i++) {
-                sum += payload_data[i];
-            }
-
-            payload_avg = sum / DATA_COUNT;
-            // DEBUG("Avg for %s is %f seconds\n", key, payload_avg);
-
-            // Reset index
-            payload_index = 0;
-        }
+        payload_avg -= payload_avg / N;
+        payload_avg += value / N;
     }
     else if (strcmp(key, "SENDING_WS") == 0)
     {
-        sending_data[sending_index++] = value;
-
-        if (sending_index >= DATA_COUNT) {
-            // Calc avg
-            double sum = 0;
-            for (i = 0; i < DATA_COUNT; i++) {
-                sum += sending_data[i];
-            }
-
-            sending_avg = sum / DATA_COUNT;
-            // DEBUG("Avg for %s is %f seconds\n", key, sending_avg);
-
-            // Reset index
-            sending_index = 0;
-        }
+        sending_avg -= sending_avg / N;
+        sending_avg += value / N;
+    }
+    else if (strcmp(key, "AUDIO") == 0)
+    {
+        audio_avg -= audio_avg / N;
+        audio_avg += value / N;
+    }
+    else if (strcmp(key, "SPECTRUM") == 0)
+    {
+        spectrum_avg -= spectrum_avg / N;
+        spectrum_avg += value / N;
     }
 }
