@@ -6,6 +6,7 @@
 #include <complex.h>
 #include <fftw3.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "spectrum.h"
 #include "dsp_common.h"
@@ -21,10 +22,66 @@ static fftw_plan plan_forward;
 
 static pthread_mutex_t spectrum_mutex;
 
+// Thread
+static pthread_t worker_thread;
+static int running = 0;
+
+static int new_data_available = 0;
+
+static unsigned int buffer_size_squared = 0;
+
 static double *power_spectrum;
 static int new_spectrum_available = 0;
 
 #define N 100
+
+static void *spectrum_worker(void *user)
+{
+    UNUSED(user);
+
+    unsigned int i = 0;
+    double value = 0;
+
+    while (running)
+    {
+        if (new_data_available)
+        {
+            pthread_mutex_lock(&spectrum_mutex);
+
+            fftw_execute(plan_forward);
+
+            unsigned int j = sensor_samples / 2;
+            for (i = 0; i < sensor_samples; i++)
+            {
+                value = 10 * log10((creal(output[i]) * creal(output[i]) + cimag(output[i]) * cimag(output[i])) / buffer_size_squared);
+
+                power_spectrum[j] -= power_spectrum[j] / N;
+                power_spectrum[j] += value / N;
+
+                // Shift
+                if (j > sensor_samples)
+                {
+                    j = 0;
+                }
+                else
+                {
+                    j++;
+                }
+            }
+
+            new_spectrum_available = 1;
+            new_data_available = 0;
+
+            pthread_mutex_unlock(&spectrum_mutex);
+        }
+
+        usleep(100);
+    }
+
+    DEBUG("Done\n");
+
+    return 0;
+}
 
 void spectrum_init(unsigned int sensor_count)
 {
@@ -32,45 +89,25 @@ void spectrum_init(unsigned int sensor_count)
     power_spectrum = calloc(sensor_samples, sizeof(double));
 
     // FFT
-    input = fftw_malloc(sizeof(fftw_complex) * (sensor_samples + 1));
-    output = fftw_malloc(sizeof(fftw_complex) * (sensor_samples + 1));
+    input = fftw_malloc(sizeof(fftw_complex) * sensor_samples);
+    output = fftw_malloc(sizeof(fftw_complex) * sensor_samples);
     plan_forward = fftw_plan_dft_1d(sensor_samples, input, output, FFTW_FORWARD, FFTW_ESTIMATE);
 
+    //
+    buffer_size_squared = sensor_samples * sensor_samples;
+
     pthread_mutex_init(&spectrum_mutex, NULL);
+
+    running = 1;
+    pthread_create(&worker_thread, NULL, spectrum_worker, NULL);
 }
 
 void spectrum_process(const cmplx_dbl *signal, unsigned int len)
 {
-    unsigned int i = 0;
-    unsigned int buffer_size_squared = sensor_samples * sensor_samples;
-
     pthread_mutex_lock(&spectrum_mutex);
 
     memcpy(input, signal, sensor_samples);
-
-    fftw_execute(plan_forward);
-
-    double value = 0;
-    unsigned int j = sensor_samples / 2;
-    for (i = 0; i < sensor_samples; i++)
-    {
-        value = 10 * log10((creal(output[i]) * creal(output[i]) + cimag(output[i]) * cimag(output[i])) / buffer_size_squared);
-
-        power_spectrum[j] -= power_spectrum[j] / N;
-        power_spectrum[j] += value / N;
-
-        // Shift
-        if (j > sensor_samples)
-        {
-            j = 0;
-        }
-        else
-        {
-            j++;
-        }
-    }
-
-    new_spectrum_available = 1;
+    new_data_available = 1;
 
     pthread_mutex_unlock(&spectrum_mutex);
 }
@@ -105,6 +142,9 @@ int spectrum_payload(char *buf, unsigned int buf_len)
 
 void spectrum_close()
 {
+    running = 0;
+    pthread_join(worker_thread, NULL);
+
     free(power_spectrum);
     fftw_destroy_plan(plan_forward);
     fftw_free(input);

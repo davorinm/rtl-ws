@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include <math.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "rf_decimator.h"
 #include "resample.h"
@@ -29,14 +30,67 @@ typedef struct rf_decimator
 
 static rf_decimator *decim = NULL;
 
+// Thread
+static pthread_t worker_thread;
+static int running = 0;
+
 static int processed_input = 0;
 static int processed_output = 0;
+
+static void *decimator_worker(void *user)
+{
+    UNUSED(user);
+
+    while (running)
+    {
+        // Process at least one output
+        if (decim->input_signal_count > decim->down_factor)
+        {
+            pthread_mutex_lock(&(decim->mutex));
+
+            // Cleanup
+            processed_input = 0;
+            processed_output = 0;
+
+            // Dcimate
+            cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_count, decim->output_signal + decim->output_signal_count, decim->output_signal_len - decim->output_signal_count, &(decim->delay), &processed_input, &processed_output);
+
+            // Update input indexes
+            memcpy(decim->input_signal, decim->input_signal + processed_input, (decim->input_signal_count - processed_input) * sizeof(cmplx_dbl));
+            decim->input_signal_count -= processed_input;
+
+            // Update output indexes
+            decim->output_signal_count += processed_output;
+
+            // Can be processed, is full
+            if (decim->output_signal_len == decim->output_signal_count)
+            {
+                // DEBUG("cic_decimate output_signal_len %d\n", output_signal_len);
+                decim->callback(decim->output_signal, decim->output_signal_len);
+
+                // Clear
+                decim->output_signal_count = 0;
+            }
+
+            pthread_mutex_unlock(&(decim->mutex));
+        }
+
+        usleep(100);
+    }
+
+    DEBUG("Done\n");
+
+    return 0;
+}
 
 void rf_decimator_init(rf_decimator_callback callback)
 {
     decim = (rf_decimator *)calloc(1, sizeof(rf_decimator));
     pthread_mutex_init(&(decim->mutex), NULL);
     decim->callback = callback;
+
+    running = 1;
+    pthread_create(&worker_thread, NULL, decimator_worker, NULL);
 }
 
 int rf_decimator_set_parameters(int sample_rate, int buffer_size, int target_rate)
@@ -44,6 +98,7 @@ int rf_decimator_set_parameters(int sample_rate, int buffer_size, int target_rat
     int r = -1;
 
     pthread_mutex_lock(&(decim->mutex));
+    
     if (sample_rate > 0 && target_rate > 0)
     {
         int down_factor = sample_rate / target_rate;
@@ -80,43 +135,14 @@ int rf_decimator_decimate(const cmplx_dbl *complex_signal, int complex_signal_le
 
     pthread_mutex_unlock(&(decim->mutex));
 
-    // Process at least one output
-    if (decim->input_signal_count > decim->down_factor)
-    {
-        pthread_mutex_lock(&(decim->mutex));
-
-        // Cleanup
-        processed_input = 0;
-        processed_output = 0;
-
-        // Dcimate
-        cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_count, decim->output_signal + decim->output_signal_count, decim->output_signal_len - decim->output_signal_count, &(decim->delay), &processed_input, &processed_output);
-
-        // Update input indexes
-        memcpy(decim->input_signal, decim->input_signal + processed_input, (decim->input_signal_count - processed_input) * sizeof(cmplx_dbl));
-        decim->input_signal_count -= processed_input;
-
-        // Update output indexes
-        decim->output_signal_count += processed_output;
-
-        pthread_mutex_unlock(&(decim->mutex));
-    }
-
-    // Can be processed, is full
-    if (decim->output_signal_len == decim->output_signal_count)
-    {
-        // DEBUG("cic_decimate output_signal_len %d\n", output_signal_len);
-        decim->callback(decim->output_signal, decim->output_signal_len);
-
-        // Clear
-        decim->output_signal_count = 0;
-    }
-
     return 0;
 }
 
 void rf_decimator_free()
 {
+    running = 0;
+    pthread_join(worker_thread, NULL);
+
     pthread_mutex_destroy(&(decim->mutex));
     decim->callback = NULL;
     free(decim->input_signal);

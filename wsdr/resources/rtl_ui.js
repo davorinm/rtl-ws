@@ -804,7 +804,7 @@ function toggle_sound() {
             encoding: '32bitFloat',
             channels: 1,
             sampleRate: 48000,
-            flushingTime: 2000
+            flushingTime: 1000
        });
     } else {
         sound_on = false;

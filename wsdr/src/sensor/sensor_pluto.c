@@ -3,11 +3,11 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <iio.h>
-#include <unistd.h>
 #include <math.h>
 #include <complex.h>
 #include <time.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 #include "sensor.h"
 #include "sensor_pluto_helpers.h"
@@ -32,11 +32,10 @@ static cmplx_dbl *samples_output;
 
 // Thread
 static pthread_t worker_thread;
-static bool running = false;
+static int running = 0;
 
 // Callback
 static signal_source_callback callback_function;
-static pthread_mutex_t callback_mutex;
 
 // Loop
 static ssize_t nbytes_rx;

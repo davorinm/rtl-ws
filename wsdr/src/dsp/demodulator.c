@@ -4,29 +4,29 @@
 #include "demodulator.h"
 #include "../tools/helpers.h"
 
-float atan2_approx(float y, float x)
+float atan2_approx(float imag, float real)
 {
     static const float pi_by_2 = (float)(M_PI / 2);
     register float atan = 0;
     register float z = 0;
 
-    if (x == 0)
+    if (real == 0)
     {
-        if (y > 0.0f)
+        if (imag > 0.0f)
             return pi_by_2;
 
-        if (y == 0)
+        if (imag == 0)
             return 0;
 
         return -pi_by_2;
     }
-    z = y / x;
+    z = imag / real;
     if (fabs(z) < 1.0f)
     {
         atan = z / (1.0f + 0.28f * z * z);
-        if (x < 0)
+        if (real < 0)
         {
-            if (y < 0.0f)
+            if (imag < 0.0f)
                 return atan - M_PI;
 
             return atan + M_PI;
@@ -35,7 +35,7 @@ float atan2_approx(float y, float x)
     else
     {
         atan = pi_by_2 - z / (z * z + 0.28f);
-        if (y < 0.0f)
+        if (imag < 0.0f)
             return atan - M_PI;
     }
     return atan;

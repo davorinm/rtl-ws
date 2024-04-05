@@ -74,9 +74,9 @@ void audio_fm_demodulator(const cmplx_dbl *signal, int len)
         pthread_mutex_unlock(&audio_mutex);
     }
 
-    fm_demodulator(signal, demod_buffer, len, scale);
-
     pthread_mutex_lock(&audio_mutex);
+
+    fm_demodulator(signal, demod_buffer, len, scale);
 
     halfband_decimate(demod_buffer, play_audio_buffer, play_audio_buffer_len, delay_line_2);
 
