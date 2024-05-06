@@ -17,7 +17,7 @@ typedef struct rtl_dev
 {
     rtlsdr_dev_t *dev;
     uint32_t device_index;
-    uint32_t f;
+    uint64_t f;
     uint32_t fs;
     double gain;
     uint32_t gain_mode;
@@ -192,12 +192,12 @@ void signal_source_remove_callback()
     callback_function = NULL;
 }
 
-uint32_t sensor_get_freq()
+uint64_t sensor_get_freq()
 {
     return dev->f;
 }
 
-int sensor_set_frequency(uint32_t f)
+int sensor_set_frequency(uint64_t f)
 {
     int r = 0;
     if (dev->f != f)

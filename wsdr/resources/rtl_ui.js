@@ -57,6 +57,7 @@ for (i = 0; i < 256; i++) {
 
 window.onload = function (event) {
     initialize();
+
     drawGrid();
     drawSpectrum();
     drawFrequencyBands()
@@ -112,64 +113,63 @@ function connect() {
             else if (firstChar == 'T') {
                 // Tuner
                 const bytearray = new Uint8Array(msg.data, 1);
-                const strData = String.fromCharCode(...bytearray);
-                const j = strData.split(';');
-
-                let f = 0;
+                const jsonData = String.fromCharCode.apply(null, bytearray)
+                const json = JSON.parse(jsonData);
                 let redraw_hz_axis = false;
-
-                while (f < j.length) {
-                    const i = j[f++].split(' ');
-
-                    if (i[0] == 'f') {
-                        let frequency = parseInt(i[1]);
-                        if (real_frequency != frequency) {
-                            real_frequency = frequency;
-                            document.getElementById("frequency").value = real_frequency;
-                            redraw_hz_axis = true;
-                        }
-                    } else if (i[0] == 'b') {
-                        let bandwidth = parseInt(i[1]);
-                        if (real_bandwidth != bandwidth) {
-                            real_bandwidth = bandwidth;
-                            document.getElementById("bandwidth").value = real_bandwidth;
-                            redraw_hz_axis = true;
-                        }
-                    } else if (i[0] == 's') {
-                        let samplerate = parseInt(i[1]);
-                        if (real_samplerate != samplerate) {
-                            real_samplerate = samplerate;
-                            document.getElementById("samplerate").value = real_samplerate;
-                            redraw_hz_axis = true;
-                        }
-                    } else if (i[0] == 'g') {
-                        let rfgain = parseInt(i[1]);
-                        if (real_rfgain != rfgain) {
-                            real_rfgain = rfgain;
-                            document.getElementById("rfgain").value = real_rfgain;
-                            redraw_hz_axis = true;
-                        }
-                    } else if (i[0] == 'y') {
-                        let spectrumSamples = parseInt(i[1]);
-                        if (real_spectrumSamples != spectrumSamples) {
-                            real_spectrumSamples = spectrumSamples;
-                            document.getElementById("samples_buffer").innerHTML = real_spectrumSamples;
-                            redraw_hz_axis = true;
-                        }
+                
+                if (json.params.freq) {
+                    let frequency = json.params.freq;
+                    if (real_frequency != frequency) {
+                        real_frequency = frequency;
+                        document.getElementById("frequency").value = real_frequency;
+                        redraw_hz_axis = true;
                     }
+                }
+
+                if (json.params.bw) {
+                    let bandwidth = json.params.bw;
+                    if (real_bandwidth != bandwidth) {
+                        real_bandwidth = bandwidth;
+                        document.getElementById("bandwidth").value = real_bandwidth;
+                        redraw_hz_axis = true;
+                    }
+                }
+
+                if (json.params.sr) {
+                    let samplerate = json.params.sr;
+                    if (real_samplerate != samplerate) {
+                        real_samplerate = samplerate;
+                        document.getElementById("samplerate").value = real_samplerate;
+                        redraw_hz_axis = true;
+                    }
+                }
+
+                if (json.params.gain) {
+                    let rfgain = json.params.gain;
+                    if (real_rfgain != rfgain) {
+                        real_rfgain = rfgain;
+                        document.getElementById("rfgain").value = real_rfgain;
+                        redraw_hz_axis = true;
+                    }
+                }
+
+                if (json.params.bs) {
+                    let spectrumSamples = json.params.bs;
+                    if (real_spectrumSamples != spectrumSamples) {
+                        real_spectrumSamples = spectrumSamples;
+                        document.getElementById("samples_buffer").innerHTML = real_spectrumSamples;
+                        redraw_hz_axis = true;
+                    }
+                }
+
+                if (json.time) {
+                    document.getElementById("statusArea").textContent = JSON.stringify(json.time);
                 }
 
                 if (redraw_hz_axis) {
                     drawFrequencyBands();
                     drawGrid();
                 }
-            }
-            else if (firstChar == 'D') {
-                const bytearray = new Uint8Array(msg.data, 1);
-                const strData = String.fromCharCode(...bytearray);
-                const j = strData.split(';');
-            
-                document.getElementById("statusArea").textContent = strData;
             }
         }
 
@@ -316,6 +316,50 @@ function waterfallUpListener(e) {
 ////////
 
 function initialize() {
+    initializeUI();
+    initializeSDR();
+}
+
+function initializeUI() {
+    // Tabs
+    document.getElementById('tab1_content').style.display = ""
+    document.getElementById('tab1_button').classList.add('tablink_active')
+    document.getElementById('tab2_content').style.display = "none"
+    document.getElementById('tab2_button').classList.remove('tablink_active')
+    document.getElementById('tab3_content').style.display = "none"
+    document.getElementById('tab3_button').classList.remove('tablink_active')
+
+    const tab1Button = document.getElementById('tab1_button');
+    tab1Button.onclick = function(){
+        document.getElementById('tab1_content').style.display = ""
+        document.getElementById('tab1_button').classList.add('tablink_active')
+        document.getElementById('tab2_content').style.display = "none"
+        document.getElementById('tab2_button').classList.remove('tablink_active')
+        document.getElementById('tab3_content').style.display = "none"
+        document.getElementById('tab3_button').classList.remove('tablink_active')
+    };
+
+    const tab2Button = document.getElementById('tab2_button');
+    tab2Button.onclick = function(){
+        document.getElementById('tab1_content').style.display = "none"
+        document.getElementById('tab1_button').classList.remove('tablink_active')
+        document.getElementById('tab2_content').style.display = ""
+        document.getElementById('tab2_button').classList.add('tablink_active')
+        document.getElementById('tab3_content').style.display = "none"
+        document.getElementById('tab3_button').classList.remove('tablink_active')
+    };
+
+    const tab3Button = document.getElementById('tab3_button');
+    tab3Button.onclick = function(){
+        document.getElementById('tab1_content').style.display = "none"
+        document.getElementById('tab2_content').style.display = "none"
+        document.getElementById('tab2_button').classList.remove('tablink_active')
+        document.getElementById('tab3_content').style.display = ""
+        document.getElementById('tab3_button').classList.add('tablink_active')
+    };
+}
+
+function initializeSDR() {
     const dpr = window.devicePixelRatio;
 
     // Spectrum

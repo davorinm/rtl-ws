@@ -138,6 +138,7 @@ bool cfg_ad9361_rx_stream_ch(struct iio_context *ctx, struct sensor_config *cfg,
 
     wr_ch_str(chn, "rf_port_select", cfg->rfport);
     wr_ch_lli(chn, "rf_bandwidth", cfg->bw_hz);
+    wr_ch_lli(chn, "filter_fir_en", 0);
     wr_ch_lli(chn, "sampling_frequency", cfg->fs_hz);
 
     //"manual fast_attack slow_attack hybrid" 0=auto 1=manual

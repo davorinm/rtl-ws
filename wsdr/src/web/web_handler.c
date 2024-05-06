@@ -3,10 +3,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
-#include "../sensor/sensor.h"
 #include "../dsp/dsp.h"
-#include "../tools/helpers.h"
 #include "../tools/timer.h"
+#include "../tools/helpers.h"
 #include "../mongoose/mongoose.h"
 
 // WS buffer size
@@ -32,10 +31,19 @@ static void ws_update_client(struct mg_connection *c)
 {
     int n = 0, nnn = 0;
 
-    // Set meta data
-    n = sprintf(ws_data_buffer, "Tf %u;b %u;s %u;g %lf;y %u", sensor_get_freq(), sensor_get_rf_band_width(), sensor_get_sample_rate(), sensor_get_gain(), sensor_get_buffer_size());
-
-    DEBUG("ws_update_client %s\n", ws_data_buffer);
+    // Set data
+    n = sprintf(ws_data_buffer, "T{\"params\":{\"freq\":%llu,\"bw\": %u,\"sr\": %u,\"gain\": %lf,\"bs\": %u},\"time\":{\"gath\":%lf,\"proc\":%lf,\"pay\":%lf,\"ws\":%lf,\"aud\":%lf,\"spect\":%lf}}",
+                dsp_sensor_get_freq(),
+                dsp_sensor_get_rf_band_width(),
+                dsp_sensor_get_sample_rate(),
+                dsp_sensor_get_gain(),
+                dsp_sensor_get_buffer_size(),
+                timer_avg("GATHERING"), 
+                timer_avg("PROCESSING"), 
+                timer_avg("PAYLOAD"), 
+                timer_avg("SENDING_WS"), 
+                timer_avg("AUDIO"), 
+                timer_avg("SPECTRUM"));
 
     // Send data
     nnn = mg_ws_send(c, ws_data_buffer, n, WEBSOCKET_OP_BINARY);
@@ -49,21 +57,11 @@ static void ws_update_spectrum(struct mg_connection *c)
 {
     int n = 0, nn = 0, nnn = 0;
 
-    struct timespec time;
-    double time_spent;
-
-    // Set meta data
+    // Set data
     n = sprintf(ws_data_buffer, "S");
-
-    timer_start(&time);
 
     // Write spectrum
     nn = dsp_spectrum_payload(ws_data_buffer + n, WS_BUFFER_SIZE - n);
-
-    timer_end(&time, &time_spent);
-    timer_log("PAYLOAD", time_spent);
-
-    timer_start(&time);
 
     // Send data
     nnn = mg_ws_send(c, ws_data_buffer, n + nn, WEBSOCKET_OP_BINARY);
@@ -71,46 +69,20 @@ static void ws_update_spectrum(struct mg_connection *c)
     {
         ERROR("Writing failed, error code == %d\n", nnn);
     }
-
-    timer_end(&time, &time_spent);
-    timer_log("SENDING_WS", time_spent);
 }
 
 static void ws_update_audio(struct mg_connection *c)
 {
     int n = 0, nn = 0, nnn = 0;
 
-    // Set meta data
+    // Set data
     n = sprintf(ws_data_buffer, "A   ");
 
     // Write audio
     nn = dsp_audio_payload(ws_data_buffer + n, WS_BUFFER_SIZE - n);
 
-    // Check length
-    if (n + nn <= 0)
-    {
-        return;
-    }
-
     // Send data
     nnn = mg_ws_send(c, ws_data_buffer, n + nn, WEBSOCKET_OP_BINARY);
-    if (nnn < 0)
-    {
-        ERROR("Writing failed, error code == %d\n", nnn);
-    }
-}
-
-static void ws_stats_data(struct mg_connection *c)
-{
-    int n = 0, nnn = 0;
-
-    // Set meta data
-    n = sprintf(ws_data_buffer, "Df %lf;b %lf;r %lf;g %lf;a %lf;s %lf", timer_avg("GATHERING"), timer_avg("PROCESSING"), timer_avg("PAYLOAD"), timer_avg("SENDING_WS"), timer_avg("AUDIO"), timer_avg("SPECTRUM"));
-
-    DEBUG("ws_stats_data %s\n", ws_data_buffer);
-
-    // Send data
-    nnn = mg_ws_send(c, ws_data_buffer, n, WEBSOCKET_OP_BINARY);
     if (nnn < 0)
     {
         ERROR("Writing failed, error code == %d\n", nnn);
@@ -131,7 +103,6 @@ static void ws_handler_data(struct mg_connection *c)
     {
         pss->update_client = 0;
         ws_update_client(c);
-        return;
     }
 
     if (pss->send_data)
@@ -139,13 +110,11 @@ static void ws_handler_data(struct mg_connection *c)
         if (dsp_spectrum_available())
         {
             ws_update_spectrum(c);
-            // return;
         }
 
         if (pss->audio_data == 1 && dsp_audio_available())
         {
             ws_update_audio(c);
-            // return;
         }
     }
 }
@@ -154,7 +123,7 @@ static void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *w
 {
     UNUSED(c);
 
-    int f = 0;
+    uint64_t f = 0;
     int bw = 0;
     int sr = 0;
     int gain_mode = 0;
@@ -166,45 +135,45 @@ static void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *w
 
     if (mg_strstr(command, mg_str(FREQ_CMD)))
     {
-        f = atoi(command.ptr + strlen(FREQ_CMD));
-        INFO("Trying to tune to %d Hz...\n", f);
-        sensor_set_frequency(f);
+        f = atoll(command.ptr + strlen(FREQ_CMD));
+        INFO("Trying to tune to %llu Hz...\n", f);
+        dsp_sensor_set_frequency(f);
     }
     else if (mg_strstr(command, mg_str(SAMPLE_RATE_CMD)))
     {
         sr = atoi(command.ptr + strlen(SAMPLE_RATE_CMD));
         INFO("Trying to set sample rate to %d Hz...\n", sr);
-        sensor_set_sample_rate(sr);
+        dsp_sensor_set_sample_rate(sr);
     }
     else if (mg_strstr(command, mg_str(BAND_WIDTH_CMD)))
     {
         bw = atoi(command.ptr + strlen(BAND_WIDTH_CMD));
         INFO("Trying to set band width to %d Hz...\n", bw);
-        sensor_set_rf_band_width(bw);
+        dsp_sensor_set_rf_band_width(bw);
     }
     else if (mg_strstr(command, mg_str(RF_GAIN_MODE_CMD)))
     {
         gain_mode = atoi(command.ptr + strlen(RF_GAIN_MODE_CMD));
         INFO("Spectrum gain mode set to %i\n", gain_mode);
-        sensor_set_gain_mode(gain_mode);
+        dsp_sensor_set_gain_mode(gain_mode);
     }
     else if (mg_strstr(command, mg_str(RF_GAIN_CMD)))
     {
         spectrum_gain = atoi(command.ptr + strlen(RF_GAIN_CMD));
         INFO("Spectrum gain set to %d dB\n", spectrum_gain);
-        sensor_set_gain(spectrum_gain);
+        dsp_sensor_set_gain(spectrum_gain);
     }
     else if (mg_strcmp(command, mg_str(START_CMD)) == 0)
     {
         pss->send_data = 1;
         INFO("START\n");
-        sensor_start();
+        dsp_sensor_start();
     }
     else if (mg_strcmp(command, mg_str(STOP_CMD)) == 0)
     {
         pss->send_data = 0;
         INFO("STOP\n");
-        sensor_stop();
+        dsp_sensor_stop();
     }
     else if (mg_strcmp(command, mg_str(START_AUDIO_CMD)) == 0)
     {
@@ -334,7 +303,7 @@ static void ws_stats_fn(void *arg)
             continue;
         }
 
-        ws_stats_data(c);
+        ws_update_client(c);
     }
 }
 
@@ -353,7 +322,7 @@ void web_init()
 
     // Timer worker for ws
     mg_timer_add(&mgr, 100, MG_TIMER_REPEAT, ws_timer_fn, &mgr);
-    mg_timer_add(&mgr, 1000 * 60, MG_TIMER_REPEAT, ws_stats_fn, &mgr);
+    mg_timer_add(&mgr, 1000 * 10, MG_TIMER_REPEAT, ws_stats_fn, &mgr);
 
     // Create HTTP listener
     mg_http_listen(&mgr, WEB_ADDRESS, fn, NULL);

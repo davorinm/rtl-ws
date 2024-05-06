@@ -212,12 +212,12 @@ void signal_source_remove_callback()
     callback_function = NULL;
 }
 
-uint32_t sensor_get_freq()
+uint64_t sensor_get_freq()
 {
     return config.lo_hz;
 }
 
-int sensor_set_frequency(uint32_t f)
+int sensor_set_frequency(uint64_t f)
 {
     if (config.lo_hz == f)
     {

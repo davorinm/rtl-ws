@@ -99,7 +99,7 @@ void timer_end(struct timespec *begin, double *time_spent)
     *time_spent = (end.tv_sec - begin->tv_sec) + (end.tv_nsec - begin->tv_nsec) / BILLION;
 }
 
-#define N 100
+#define N 10
 
 double gathering_avg = 0;
 double processing_avg = 0;
@@ -139,8 +139,6 @@ double timer_avg(char *key) {
 
 void timer_log(char *key, double value)
 {
-    int i;
-
     if (strcmp(key, "GATHERING") == 0)
     {
         gathering_avg -= gathering_avg / N;

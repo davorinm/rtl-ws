@@ -1,0 +1,234 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #4A4A4A;
+}
+
+/* Basic grid */
+
+#page {
+    width: 100%;
+    height: 100%;
+
+    display: grid;
+    grid-template-areas:
+        "controls spectrumContent"
+        "stats stats";
+    grid-template-rows: 1fr 80px;
+    grid-template-columns: 250px 1fr;
+}
+
+#controls {
+    grid-area: controls;
+    margin: 5px;
+    padding: 10px;
+
+    background-color: #636363;
+    border: 1px solid grey;
+}
+
+spectrumContent {
+    grid-area: spectrumContent;
+    padding: 10px;
+    margin: 5px;
+
+    background-color: #636363;
+    border: 1px solid grey;
+}
+
+#device {
+    grid-area: device;
+}
+
+#tuner {
+    margin-bottom: 10px;
+}
+
+#stats {
+    grid-area: stats;
+    margin: 5px;
+    padding: 10px;
+    background-color: #636363;
+    border: 1px solid grey;
+}
+
+container {
+    margin: 5px;
+    background-color: #636363;
+    border: 1px solid grey;
+    padding: 0px;
+}
+
+/* Spectrum contetn grid */
+
+spectrum {
+    width: 100%;
+    display: grid;
+    grid-template-areas:
+        "spectrumChartValues spectrumChart"
+        "empty spectrumHorizontalValues"
+        "spectrumTimeValues spectrumTime";
+    grid-template-rows: 1fr 30px 1fr;
+    grid-template-columns: 50px 1fr;
+}
+
+spectrumChartValues {
+    grid-area: spectrumChartValues;
+}
+
+spectrumChart {
+    grid-area: spectrumChart;
+
+}
+
+spectrumHorizontalValues {
+    grid-area: spectrumHorizontalValues;
+
+}
+
+spectrumTime {
+    grid-area: spectrumTime;
+
+}
+
+spectrumTimeValues {
+    grid-area: spectrumTimeValues;
+}
+
+#spectrumChartValues {
+    width: 100%;
+    height: 100%;
+}
+
+#spectrumTimeValues {
+    width: 100%;
+    height: 100%;
+}
+
+/* Styles */
+
+.control {
+    background-color: #636363;
+    border: 1px solid grey;
+    margin-bottom: 10px;
+    padding: 5px;
+}
+
+.control_title {
+    margin-bottom: 5px;
+}
+
+.control_elements {}
+
+fieldset {
+    margin-bottom: 10px;
+    padding: 5px;
+    border: 1px solid lightgray;
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+
+.controls_input {
+    width: 100px;
+}
+
+legend {}
+
+#tuner {}
+
+#filter {
+    float: left;
+}
+
+#tuner_frequency {
+    font-size: 20px;
+    width: 150px;
+}
+
+#tuner_filter_width {
+    font-size: 20px;
+    width: 150px;
+}
+
+.tuner_input {}
+
+#left {
+    padding: 10px;
+    border: 1px solid #888;
+    margin-right: 10px;
+    background-color: #333;
+}
+
+#center {
+    border: 1px solid #888;
+}
+
+#spectrum {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#spectrumFilterCanvas {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 2;
+}
+
+#spectrumCanvas {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+}
+
+#spectrumGridCanvas {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 0;
+}
+
+#bandCanvas {
+    width: 100%;
+    height: 30px;
+}
+
+#waterfallCanvas {
+    width: 100%;
+    height: 100%;
+}
+
+footer {
+    background: #636363;
+    margin: 0 10px 10px 10px;
+    border: 1px solid grey;
+    padding: 10px;
+}
+
+/* Tabs */
+
+.tablink {
+    background-color: #555;
+    color: white;
+    border: none;
+    cursor: pointer;
+    padding: 10px 5px;
+}
+
+.tablink:hover {
+    background-color: #777;
+}
+
+.tablink_active {
+    background-color: #ccc;
+}

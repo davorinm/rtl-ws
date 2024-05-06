@@ -65,7 +65,7 @@ static void *decimator_worker(void *user)
             // Can be processed, is full
             if (decim->output_signal_len == decim->output_signal_count)
             {
-                // DEBUG("cic_decimate output_signal_len %d\n", output_signal_len);
+                // Callback
                 decim->callback(decim->output_signal, decim->output_signal_len);
 
                 // Clear

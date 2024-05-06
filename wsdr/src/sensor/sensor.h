@@ -12,8 +12,8 @@ int sensor_init();
 void signal_source_add_callback(signal_source_callback callback);
 void signal_source_remove_callback();
 
-uint32_t sensor_get_freq();
-int sensor_set_frequency(uint32_t f);
+uint64_t sensor_get_freq();
+int sensor_set_frequency(uint64_t f);
 
 uint32_t sensor_get_sample_rate();
 int sensor_set_sample_rate(uint32_t fs);
@@ -31,6 +31,7 @@ uint32_t sensor_get_buffer_size();
 
 void sensor_start();
 void sensor_stop();
+
 void sensor_close();
 
 #endif

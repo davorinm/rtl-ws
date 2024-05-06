@@ -40,6 +40,7 @@ static void *spectrum_worker(void *user)
     UNUSED(user);
 
     unsigned int i = 0;
+    unsigned int j = 0;
     double value = 0;
 
     while (running)
@@ -50,7 +51,7 @@ static void *spectrum_worker(void *user)
 
             fftw_execute(plan_forward);
 
-            unsigned int j = sensor_samples / 2;
+            j = sensor_samples / 2;
             for (i = 0; i < sensor_samples; i++)
             {
                 value = 10 * log10((creal(output[i]) * creal(output[i]) + cimag(output[i]) * cimag(output[i])) / buffer_size_squared);
@@ -104,6 +105,11 @@ void spectrum_init(unsigned int sensor_count)
 
 void spectrum_process(const cmplx_dbl *signal, unsigned int len)
 {
+    if (new_data_available == 1)
+    {
+        return;
+    }
+
     pthread_mutex_lock(&spectrum_mutex);
 
     memcpy(input, signal, sensor_samples);

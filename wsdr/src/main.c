@@ -7,7 +7,6 @@
 #include "dsp/dsp.h"
 #include "tools/helpers.h"
 #include "web/web_handler.h"
-#include "sensor/sensor.h"
 #include "tools/timer.h"
 #include "dsp/spectrum.h"
 
@@ -25,18 +24,10 @@ int main(int argc, char **argv)
     UNUSED(argc);
     UNUSED(argv);
 
-    // Timing test
-    time_test_1();
-    time_test_2();
-    time_test_3();
-
     // Signal for Ctrl+C
     signal(SIGINT, sighandler);
     signal(SIGQUIT, sighandler);
     signal(SIGTERM, sighandler);
-
-    INFO("Initializing sensor\n");
-    sensor_init();
 
     INFO("Initializing dsp\n");
     dsp_init();
@@ -49,9 +40,6 @@ int main(int argc, char **argv)
     {
         web_poll();
     }
-
-    INFO("Closing sensor\n");
-    sensor_close();
 
     INFO("Closing web context\n");
     web_close();

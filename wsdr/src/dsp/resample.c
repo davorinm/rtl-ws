@@ -11,7 +11,6 @@ void halfband_decimate(const float *input, float *output, int output_len, float 
 
     for (n = 0; n < output_len; n++)
     {
-
         idx = 2 * n - HALF_BAND_N / 2;
         output[n] = half_band_kernel[HALF_BAND_N / 2] * (idx >= 0 ? input[idx] : delay[(HALF_BAND_N - 1) + idx]);
 
