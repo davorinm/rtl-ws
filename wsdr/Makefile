@@ -18,7 +18,7 @@ EMBED_FILES=1
 
 # Souces
 MAIN_CSOURCEFILES=src/main.c src/mongoose/mongoose.c src/web/web_handler.c
-DSP_CSOURCEFILES=src/dsp/spectrum.c src/dsp/rf_decimator.c src/dsp/resample.c src/dsp/dsp.c src/dsp/rf_cic_decimate.c src/dsp/audio.c src/dsp/demodulator.c
+DSP_CSOURCEFILES=src/dsp/spectrum.c src/dsp/rf_decimator.c src/dsp/rf_resample.c src/dsp/dsp.c src/dsp/rf_cic_decimate.c src/dsp/audio.c src/dsp/demodulator.c
 TOOLS_CSOURCEFILES=src/tools/helpers.c src/tools/list.c src/tools/timer.c
 PLUTO_CSOURCEFILES=src/sensor/sensor_pluto_helpers.c src/sensor/sensor_pluto.c
 RTLSDR_CSOURCEFILES=src/sensor/sensor_rtlsdr.c

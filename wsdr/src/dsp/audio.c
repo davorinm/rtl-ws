@@ -3,8 +3,8 @@
 #include <pthread.h>
 
 #include "audio.h"
-#include "resample.h"
 #include "demodulator.h"
+#include "rf_cic_decimate.h"
 #include "../tools/helpers.h"
 
 static float *demod_buffer = NULL;
@@ -49,7 +49,7 @@ void audio_stop()
     pthread_mutex_unlock(&audio_mutex);
 }
 
-void audio_fm_demodulator(const cmplx_dbl *signal, int len)
+void audio_process(const cmplx_dbl *signal, int len)
 {
     if (audio_running == 0) {
         return;
@@ -78,7 +78,7 @@ void audio_fm_demodulator(const cmplx_dbl *signal, int len)
 
     fm_demodulator(signal, demod_buffer, len, scale);
 
-    halfband_decimate(demod_buffer, play_audio_buffer, play_audio_buffer_len, delay_line_2);
+    rf_halfband_decimate(demod_buffer, play_audio_buffer, play_audio_buffer_len, delay_line_2);
 
     // Check space
     if (audio_buffer_len - audio_buffer_count < play_audio_buffer_len)

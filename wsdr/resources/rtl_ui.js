@@ -116,7 +116,7 @@ function connect() {
                 const jsonData = String.fromCharCode.apply(null, bytearray)
                 const json = JSON.parse(jsonData);
                 let redraw_hz_axis = false;
-                
+
                 if (json.params.freq) {
                     let frequency = json.params.freq;
                     if (real_frequency != frequency) {
@@ -209,6 +209,7 @@ function spectrumDownListener(e) {
     document.getElementById("tuner_filter_width").value = '';
 
     drawFilter();
+    send_filter_frequency_change();
 }
 
 function spectrumMoveListener(e) {
@@ -229,6 +230,7 @@ function spectrumMoveListener(e) {
     }
 
     drawFilter();
+    send_filter_frequency_change();
 }
 
 function spectrumUpListener(e) {
@@ -247,6 +249,7 @@ function spectrumUpListener(e) {
     }
 
     drawFilter();
+    send_filter_frequency_change();
 }
 
 //// Waterfall listeners
@@ -273,6 +276,7 @@ function waterfallDownListener(e) {
     document.getElementById("tuner_filter_width").value = '';
 
     drawFilter();
+    send_filter_frequency_change();
 }
 
 function waterfallMoveListener(e) {
@@ -293,6 +297,7 @@ function waterfallMoveListener(e) {
     }
 
     drawFilter();
+    send_filter_frequency_change();
 }
 
 function waterfallUpListener(e) {
@@ -311,6 +316,7 @@ function waterfallUpListener(e) {
     }
 
     drawFilter();
+    send_filter_frequency_change();
 }
 
 ////////
@@ -330,7 +336,7 @@ function initializeUI() {
     document.getElementById('tab3_button').classList.remove('tablink_active')
 
     const tab1Button = document.getElementById('tab1_button');
-    tab1Button.onclick = function(){
+    tab1Button.onclick = function () {
         document.getElementById('tab1_content').style.display = ""
         document.getElementById('tab1_button').classList.add('tablink_active')
         document.getElementById('tab2_content').style.display = "none"
@@ -340,7 +346,7 @@ function initializeUI() {
     };
 
     const tab2Button = document.getElementById('tab2_button');
-    tab2Button.onclick = function(){
+    tab2Button.onclick = function () {
         document.getElementById('tab1_content').style.display = "none"
         document.getElementById('tab1_button').classList.remove('tablink_active')
         document.getElementById('tab2_content').style.display = ""
@@ -350,7 +356,7 @@ function initializeUI() {
     };
 
     const tab3Button = document.getElementById('tab3_button');
-    tab3Button.onclick = function(){
+    tab3Button.onclick = function () {
         document.getElementById('tab1_content').style.display = "none"
         document.getElementById('tab2_content').style.display = "none"
         document.getElementById('tab2_button').classList.remove('tablink_active')
@@ -849,7 +855,7 @@ function toggle_sound() {
             channels: 1,
             sampleRate: 48000,
             flushingTime: 1000
-       });
+        });
     } else {
         sound_on = false;
         document.getElementById("toggle_sound").value = "start_audio";
@@ -882,8 +888,7 @@ function tuner_frequency_change() {
     spectrumFilterStartHz = parseInt(value);
 
     drawFilter();
-
-    socket_lm.send("filter_freq " + value);
+    send_filter_frequency_change();
 }
 
 function tuner_filter_width_change() {
@@ -892,6 +897,13 @@ function tuner_filter_width_change() {
     spectrumFilterWidthHz = parseInt(value);
 
     drawFilter();
+    send_filter_frequency_change();
+}
 
-    socket_lm.send("filter_freq_width " + value);
+function send_filter_frequency_change() {
+    socket_lm.send("filter_freq " + spectrumFilterStartHz);
+
+    if (spectrumFilterWidthHz != 0) {
+        socket_lm.send("filter_freq_width " + spectrumFilterWidthHz);
+    }
 }

@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include "rf_decimator.h"
-#include "resample.h"
 #include "rf_cic_decimate.h"
 #include "../tools/helpers.h"
 

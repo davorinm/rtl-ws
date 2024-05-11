@@ -209,7 +209,7 @@ int sensor_set_frequency(uint64_t f)
         }
         else
         {
-            INFO("Tuned to %u Hz.\n", f);
+            INFO("Tuned to %llu Hz.\n", f);
             dev->f = f;
         }
     }

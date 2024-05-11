@@ -22,6 +22,8 @@ static char *ws_data_buffer = NULL;
 #define STOP_CMD "stop"
 #define START_AUDIO_CMD "start_audio"
 #define STOP_AUDIO_CMD "stop_audio"
+#define FILTER_FREQ_CMD "filter_freq"
+#define FILTER_FREQ_WIDTH_CMD "filter_freq_width"
 #define KILL_CMD "kill"
 
 // Mongoose event manager
@@ -32,12 +34,14 @@ static void ws_update_client(struct mg_connection *c)
     int n = 0, nnn = 0;
 
     // Set data
-    n = sprintf(ws_data_buffer, "T{\"params\":{\"freq\":%llu,\"bw\": %u,\"sr\": %u,\"gain\": %lf,\"bs\": %u},\"time\":{\"gath\":%lf,\"proc\":%lf,\"pay\":%lf,\"ws\":%lf,\"aud\":%lf,\"spect\":%lf}}",
+    n = sprintf(ws_data_buffer, "T{\"params\":{\"freq\":%llu,\"bw\": %u,\"sr\": %u,\"gain\": %lf,\"bs\": %u,\"ff\": %u,\"fw\": %u},\"time\":{\"gath\":%lf,\"proc\":%lf,\"pay\":%lf,\"ws\":%lf,\"aud\":%lf,\"spect\":%lf}}",
                 dsp_sensor_get_freq(),
                 dsp_sensor_get_rf_band_width(),
                 dsp_sensor_get_sample_rate(),
                 dsp_sensor_get_gain(),
                 dsp_sensor_get_buffer_size(),
+                dsp_filter_get_freq(),
+                dsp_filter_get_width(),
                 timer_avg("GATHERING"), 
                 timer_avg("PROCESSING"), 
                 timer_avg("PAYLOAD"), 
@@ -119,6 +123,11 @@ static void ws_handler_data(struct mg_connection *c)
     }
 }
 
+static bool str_prefix(const struct mg_str pre, const char *str)
+{
+    return strncmp(pre.ptr, str, strlen(str)) == 0;
+}
+
 static void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *wm, struct per_session_data__rtl_ws *pss)
 {
     UNUSED(c);
@@ -128,69 +137,83 @@ static void ws_handler_callback(struct mg_connection *c, struct mg_ws_message *w
     int sr = 0;
     int gain_mode = 0;
     int spectrum_gain = 0;
+    int filter_freq = 0;
+    int filter_freq_width = 0;
     char *in_buffer = NULL;
 
     struct mg_str command = wm->data;
     MG_INFO(("Got command: %.*s", (int)command.len, command.ptr));
 
-    if (mg_strstr(command, mg_str(FREQ_CMD)))
+    if (str_prefix(command, FREQ_CMD))
     {
         f = atoll(command.ptr + strlen(FREQ_CMD));
         INFO("Trying to tune to %llu Hz...\n", f);
         dsp_sensor_set_frequency(f);
     }
-    else if (mg_strstr(command, mg_str(SAMPLE_RATE_CMD)))
+    else if (str_prefix(command, SAMPLE_RATE_CMD))
     {
         sr = atoi(command.ptr + strlen(SAMPLE_RATE_CMD));
         INFO("Trying to set sample rate to %d Hz...\n", sr);
         dsp_sensor_set_sample_rate(sr);
     }
-    else if (mg_strstr(command, mg_str(BAND_WIDTH_CMD)))
+    else if (str_prefix(command, BAND_WIDTH_CMD))
     {
         bw = atoi(command.ptr + strlen(BAND_WIDTH_CMD));
         INFO("Trying to set band width to %d Hz...\n", bw);
         dsp_sensor_set_rf_band_width(bw);
     }
-    else if (mg_strstr(command, mg_str(RF_GAIN_MODE_CMD)))
+    else if (str_prefix(command, RF_GAIN_MODE_CMD))
     {
         gain_mode = atoi(command.ptr + strlen(RF_GAIN_MODE_CMD));
         INFO("Spectrum gain mode set to %i\n", gain_mode);
         dsp_sensor_set_gain_mode(gain_mode);
     }
-    else if (mg_strstr(command, mg_str(RF_GAIN_CMD)))
+    else if (str_prefix(command, RF_GAIN_CMD))
     {
         spectrum_gain = atoi(command.ptr + strlen(RF_GAIN_CMD));
         INFO("Spectrum gain set to %d dB\n", spectrum_gain);
         dsp_sensor_set_gain(spectrum_gain);
     }
-    else if (mg_strcmp(command, mg_str(START_CMD)) == 0)
+    else if (str_prefix(command, START_CMD))
     {
         pss->send_data = 1;
         INFO("START\n");
         dsp_sensor_start();
     }
-    else if (mg_strcmp(command, mg_str(STOP_CMD)) == 0)
+    else if (str_prefix(command, STOP_CMD))
     {
         pss->send_data = 0;
         INFO("STOP\n");
         dsp_sensor_stop();
     }
-    else if (mg_strcmp(command, mg_str(START_AUDIO_CMD)) == 0)
+    else if (str_prefix(command, START_AUDIO_CMD))
     {
         dsp_audio_start();
         pss->audio_data = 1;
         INFO("Audio enabled\n");
     }
-    else if (mg_strcmp(command, mg_str(STOP_AUDIO_CMD)) == 0)
+    else if (str_prefix(command, STOP_AUDIO_CMD))
     {
         dsp_audio_stop();
         pss->audio_data = 0;
         INFO("Audio disabled\n");
     }
-    else if (mg_strcmp(command, mg_str(KILL_CMD)) == 0)
+    else if (str_prefix(command, KILL_CMD))
     {
         INFO("Killing process..\n");
         raise(SIGINT);
+    }
+    else if (str_prefix(command, FILTER_FREQ_CMD))
+    {
+        filter_freq = atoi(command.ptr + strlen(FILTER_FREQ_CMD));
+        INFO("Filter frequency set to %d Hz\n", filter_freq);
+        dsp_filter_freq(filter_freq);
+    }
+    else if (str_prefix(command, FILTER_FREQ_WIDTH_CMD))
+    {
+        filter_freq_width = atoi(command.ptr + strlen(FILTER_FREQ_WIDTH_CMD));
+        INFO("Filter frequency width set to %d Hz\n", filter_freq_width);
+        dsp_filter_width(filter_freq_width);
     }
     else
     {

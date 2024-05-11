@@ -9,7 +9,7 @@ void audio_start();
 
 void audio_stop();
 
-void audio_fm_demodulator(const cmplx_dbl* signal, int len);
+void audio_process(const cmplx_dbl* signal, int len);
 
 int audio_new_audio_available();
 
