@@ -6,7 +6,7 @@
 
 void spectrum_init(unsigned int sensor_count);
 
-void spectrum_process(const cmplx_dbl *signal, unsigned int len);
+void spectrum_data(const cmplx_dbl *signal, unsigned int len);
 
 int spectrum_available();
 

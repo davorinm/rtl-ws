@@ -36,44 +36,48 @@ static int running = 0;
 static int processed_input = 0;
 static int processed_output = 0;
 
+static void decimator_process()
+{
+    // Process at least one output
+    if (decim->input_signal_count > decim->down_factor)
+    {
+        pthread_mutex_lock(&(decim->mutex));
+
+        // Cleanup
+        processed_input = 0;
+        processed_output = 0;
+
+        // Dcimate
+        cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_count, decim->output_signal + decim->output_signal_count, decim->output_signal_len - decim->output_signal_count, &(decim->delay), &processed_input, &processed_output);
+
+        // Update input indexes
+        memcpy(decim->input_signal, decim->input_signal + processed_input, (decim->input_signal_count - processed_input) * sizeof(cmplx_dbl));
+        decim->input_signal_count -= processed_input;
+
+        // Update output indexes
+        decim->output_signal_count += processed_output;
+
+        // Can be processed, is full
+        if (decim->output_signal_len == decim->output_signal_count)
+        {
+            // Callback
+            decim->callback(decim->output_signal, decim->output_signal_len);
+
+            // Clear
+            decim->output_signal_count = 0;
+        }
+
+        pthread_mutex_unlock(&(decim->mutex));
+    }
+}
+
 static void *decimator_worker(void *user)
 {
     UNUSED(user);
 
     while (running)
     {
-        // Process at least one output
-        if (decim->input_signal_count > decim->down_factor)
-        {
-            pthread_mutex_lock(&(decim->mutex));
-
-            // Cleanup
-            processed_input = 0;
-            processed_output = 0;
-
-            // Dcimate
-            cic_decimate(decim->down_factor, decim->input_signal, decim->input_signal_count, decim->output_signal + decim->output_signal_count, decim->output_signal_len - decim->output_signal_count, &(decim->delay), &processed_input, &processed_output);
-
-            // Update input indexes
-            memcpy(decim->input_signal, decim->input_signal + processed_input, (decim->input_signal_count - processed_input) * sizeof(cmplx_dbl));
-            decim->input_signal_count -= processed_input;
-
-            // Update output indexes
-            decim->output_signal_count += processed_output;
-
-            // Can be processed, is full
-            if (decim->output_signal_len == decim->output_signal_count)
-            {
-                // Callback
-                decim->callback(decim->output_signal, decim->output_signal_len);
-
-                // Clear
-                decim->output_signal_count = 0;
-            }
-
-            pthread_mutex_unlock(&(decim->mutex));
-        }
-
+        decimator_process();
         usleep(100);
     }
 
@@ -97,7 +101,7 @@ int rf_decimator_set_parameters(int sample_rate, int buffer_size, int target_rat
     int r = -1;
 
     pthread_mutex_lock(&(decim->mutex));
-    
+
     if (sample_rate > 0 && target_rate > 0)
     {
         int down_factor = sample_rate / target_rate;

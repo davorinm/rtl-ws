@@ -14,8 +14,8 @@
 
 #define DECIMATED_TARGET_BW_HZ 48000 * 2
 
-static int audio_process_enabled = 0;
-static int spectrum_process_enabled = 1;
+static int audio_enabled = 0;
+static int spectrum_enabled = 1;
 
 static struct timespec time_measure;
 static double time_spent;
@@ -24,7 +24,7 @@ static void demodulator_cb(const cmplx_dbl *signal, int len)
 {
     timer_start(&time_measure);
 
-    if (audio_process_enabled)
+    if (audio_enabled)
     {
         rf_decimator_decimate(signal, len);
     }
@@ -37,9 +37,9 @@ static void spectrum_cb(const cmplx_dbl *signal, int len)
 {
     timer_start(&time_measure);
 
-    if (spectrum_process_enabled)
+    if (spectrum_enabled)
     {
-        spectrum_process(signal, len);
+        spectrum_data(signal, len);
     }
 
     timer_end(&time_measure, &time_spent);
@@ -58,10 +58,11 @@ void dsp_init()
     sensor_init();
 
     INFO("Initializing audio processing...\n");
-    audio_init();
 
     unsigned int sample_rate = sensor_get_sample_rate();
     unsigned int buffer_size = sensor_get_buffer_size();
+
+    audio_init(buffer_size);
 
     rf_decimator_init(audio_process);
     rf_decimator_set_parameters(sample_rate, buffer_size, DECIMATED_TARGET_BW_HZ);
@@ -142,12 +143,12 @@ void dsp_sensor_stop()
 
 void dsp_spectrum_start()
 {
-    spectrum_process_enabled = 1;
+    spectrum_enabled = 1;
 }
 
 void dsp_spectrum_stop()
 {
-    spectrum_process_enabled = 0;
+    spectrum_enabled = 0;
 }
 
 int dsp_spectrum_available()
@@ -184,13 +185,13 @@ int dsp_filter_get_width()
 
 void dsp_audio_start()
 {
-    audio_process_enabled = 1;
+    audio_enabled = 1;
     audio_start();
 }
 
 void dsp_audio_stop()
 {
-    audio_process_enabled = 0;
+    audio_enabled = 0;
     audio_stop();
 }
 

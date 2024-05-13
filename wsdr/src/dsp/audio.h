@@ -3,7 +3,7 @@
 
 #include "dsp_common.h"
 
-void audio_init();
+void audio_init(int len);
 
 void audio_start();
 

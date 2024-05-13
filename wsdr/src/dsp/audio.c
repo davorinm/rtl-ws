@@ -24,8 +24,18 @@ static float delay_line_2[HALF_BAND_N - 1] = {0};
 
 static const float scale = 1;
 
-void audio_init()
+void audio_init(int len)
 {
+    demod_buffer_len = len;
+    demod_buffer = (float *)realloc(demod_buffer, demod_buffer_len * sizeof(float));
+
+    play_audio_buffer_len = len / 2;
+    play_audio_buffer = (float *)realloc(play_audio_buffer, play_audio_buffer_len * sizeof(float));
+
+    audio_buffer_len = len * 2;
+    audio_buffer = (float *)realloc(audio_buffer, audio_buffer_len * sizeof(float));
+    audio_buffer_count = 0;
+
     pthread_mutex_init(&audio_mutex, NULL);
 }
 
@@ -53,25 +63,6 @@ void audio_process(const cmplx_dbl *signal, int len)
 {
     if (audio_running == 0) {
         return;
-    }
-
-    if (demod_buffer_len != len)
-    {
-        DEBUG("Reallocating demodulation and audio buffers %d %d\n", demod_buffer_len, len);
-
-        pthread_mutex_lock(&audio_mutex);
-
-        demod_buffer_len = len;
-        demod_buffer = (float *)realloc(demod_buffer, demod_buffer_len * sizeof(float));
-
-        play_audio_buffer_len = len / 2;
-        play_audio_buffer = (float *)realloc(play_audio_buffer, play_audio_buffer_len * sizeof(float));
-
-        audio_buffer_len = len * 2;
-        audio_buffer = (float *)realloc(audio_buffer, audio_buffer_len * sizeof(float));
-        audio_buffer_count = 0;
-
-        pthread_mutex_unlock(&audio_mutex);
     }
 
     pthread_mutex_lock(&audio_mutex);

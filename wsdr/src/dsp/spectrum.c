@@ -35,47 +35,52 @@ static int new_spectrum_available = 0;
 
 #define N 100
 
+static void specrum_process()
+{
+    static unsigned int i = 0;
+    static unsigned int j = 0;
+    static double value = 0;
+
+    if (new_data_available)
+    {
+        pthread_mutex_lock(&spectrum_mutex);
+
+        fftw_execute(plan_forward);
+
+        j = sensor_samples / 2;
+        for (i = 0; i < sensor_samples; i++)
+        {
+            value = 10 * log10((creal(output[i]) * creal(output[i]) + cimag(output[i]) * cimag(output[i])) / buffer_size_squared);
+
+            // https://stackoverflow.com/questions/12636613/how-to-calculate-moving-average-without-keeping-the-count-and-data-totalç
+            power_spectrum[j] -= power_spectrum[j] / N;
+            power_spectrum[j] += value / N;
+
+            // Shift
+            if (j > sensor_samples)
+            {
+                j = 0;
+            }
+            else
+            {
+                j++;
+            }
+        }
+
+        new_spectrum_available = 1;
+        new_data_available = 0;
+
+        pthread_mutex_unlock(&spectrum_mutex);
+    }
+}
+
 static void *spectrum_worker(void *user)
 {
     UNUSED(user);
 
-    unsigned int i = 0;
-    unsigned int j = 0;
-    double value = 0;
-
     while (running)
     {
-        if (new_data_available)
-        {
-            pthread_mutex_lock(&spectrum_mutex);
-
-            fftw_execute(plan_forward);
-
-            j = sensor_samples / 2;
-            for (i = 0; i < sensor_samples; i++)
-            {
-                value = 10 * log10((creal(output[i]) * creal(output[i]) + cimag(output[i]) * cimag(output[i])) / buffer_size_squared);
-
-                power_spectrum[j] -= power_spectrum[j] / N;
-                power_spectrum[j] += value / N;
-
-                // Shift
-                if (j > sensor_samples)
-                {
-                    j = 0;
-                }
-                else
-                {
-                    j++;
-                }
-            }
-
-            new_spectrum_available = 1;
-            new_data_available = 0;
-
-            pthread_mutex_unlock(&spectrum_mutex);
-        }
-
+        specrum_process();
         usleep(100);
     }
 
@@ -103,7 +108,7 @@ void spectrum_init(unsigned int sensor_count)
     pthread_create(&worker_thread, NULL, spectrum_worker, NULL);
 }
 
-void spectrum_process(const cmplx_dbl *signal, unsigned int len)
+void spectrum_data(const cmplx_dbl *signal, unsigned int len)
 {
     if (new_data_available == 1)
     {
@@ -112,7 +117,7 @@ void spectrum_process(const cmplx_dbl *signal, unsigned int len)
 
     pthread_mutex_lock(&spectrum_mutex);
 
-    memcpy(input, signal, sensor_samples);
+    memcpy(input, signal, len * sizeof(cmplx_dbl));
     new_data_available = 1;
 
     pthread_mutex_unlock(&spectrum_mutex);

@@ -96,7 +96,7 @@ void timer_end(struct timespec *begin, double *time_spent)
     clock_gettime(CLOCK_REALTIME, &end);
 
     // time_spent = end - start
-    *time_spent = (end.tv_sec - begin->tv_sec) + (end.tv_nsec - begin->tv_nsec) / BILLION;
+    *time_spent = (end.tv_sec - begin->tv_sec) + ((end.tv_nsec - begin->tv_nsec) / BILLION);
 }
 
 #define N 10
