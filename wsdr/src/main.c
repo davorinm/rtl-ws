@@ -7,7 +7,7 @@
 #include "dsp/dsp.h"
 #include "tools/helpers.h"
 #include "web/web_handler.h"
-#include "tools/timer.h"
+#include "tools/stats.h"
 #include "dsp/spectrum.h"
 
 static volatile int force_exit = 0;
@@ -29,6 +29,9 @@ int main(int argc, char **argv)
     signal(SIGQUIT, sighandler);
     signal(SIGTERM, sighandler);
 
+    INFO("Initializing statistics\n");
+    stats_init();
+
     INFO("Initializing dsp\n");
     dsp_init();
 
@@ -46,6 +49,9 @@ int main(int argc, char **argv)
 
     INFO("Closing dsp\n");
     dsp_close();
+
+    INFO("Closing statistics\n");
+    stats_close();
 
     return 0;
 }

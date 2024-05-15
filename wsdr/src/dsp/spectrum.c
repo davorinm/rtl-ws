@@ -11,6 +11,7 @@
 #include "spectrum.h"
 #include "dsp_common.h"
 #include "../tools/helpers.h"
+#include "../tools/stats.h"
 
 // Size
 static unsigned int sensor_samples;
@@ -20,16 +21,12 @@ static fftw_complex *input;
 static fftw_complex *output;
 static fftw_plan plan_forward;
 
-static pthread_mutex_t spectrum_mutex;
-
 // Thread
 static pthread_t worker_thread;
 static int running = 0;
 
 static int new_data_available = 0;
-
 static unsigned int buffer_size_squared = 0;
-
 static double *power_spectrum;
 static int new_spectrum_available = 0;
 
@@ -40,10 +37,11 @@ static void specrum_process()
     static unsigned int i = 0;
     static unsigned int j = 0;
     static double value = 0;
+    static struct timespec time_measure;
 
     if (new_data_available)
     {
-        pthread_mutex_lock(&spectrum_mutex);
+        stats_timer_start(&time_measure);
 
         fftw_execute(plan_forward);
 
@@ -70,7 +68,7 @@ static void specrum_process()
         new_spectrum_available = 1;
         new_data_available = 0;
 
-        pthread_mutex_unlock(&spectrum_mutex);
+        stats_timer_end("SPECTRUM_PROCESS", &time_measure);
     }
 }
 
@@ -102,8 +100,6 @@ void spectrum_init(unsigned int sensor_count)
     //
     buffer_size_squared = sensor_samples * sensor_samples;
 
-    pthread_mutex_init(&spectrum_mutex, NULL);
-
     running = 1;
     pthread_create(&worker_thread, NULL, spectrum_worker, NULL);
 }
@@ -115,12 +111,8 @@ void spectrum_data(const cmplx_dbl *signal, unsigned int len)
         return;
     }
 
-    pthread_mutex_lock(&spectrum_mutex);
-
     memcpy(input, signal, len * sizeof(cmplx_dbl));
     new_data_available = 1;
-
-    pthread_mutex_unlock(&spectrum_mutex);
 }
 
 int spectrum_available()
@@ -160,5 +152,4 @@ void spectrum_close()
     fftw_destroy_plan(plan_forward);
     fftw_free(input);
     fftw_free(output);
-    pthread_mutex_destroy(&spectrum_mutex);
 }

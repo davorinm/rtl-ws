@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "../dsp/dsp.h"
-#include "../tools/timer.h"
+#include "../tools/stats.h"
 #include "../tools/helpers.h"
 #include "../mongoose/mongoose.h"
 
@@ -34,7 +34,7 @@ static void ws_update_client(struct mg_connection *c)
     int n = 0, nnn = 0;
 
     // Set data
-    n = sprintf(ws_data_buffer, "T{\"params\":{\"freq\":%llu,\"bw\": %u,\"sr\": %u,\"gain\": %lf,\"bs\": %u,\"ff\": %u,\"fw\": %u},\"time\":{\"gath\":%lf,\"proc\":%lf,\"pay\":%lf,\"ws\":%lf,\"aud\":%lf,\"spect\":%lf}}",
+    n = sprintf(ws_data_buffer, "T{\"params\":{\"freq\":%llu,\"bw\": %u,\"sr\": %u,\"gain\": %lf,\"bs\": %u,\"ff\": %u,\"fw\": %u},\"stats\":%s}",
                 dsp_sensor_get_freq(),
                 dsp_sensor_get_rf_band_width(),
                 dsp_sensor_get_sample_rate(),
@@ -42,12 +42,7 @@ static void ws_update_client(struct mg_connection *c)
                 dsp_sensor_get_buffer_size(),
                 dsp_filter_get_freq(),
                 dsp_filter_get_width(),
-                timer_avg("GATHERING"), 
-                timer_avg("PROCESSING"), 
-                timer_avg("PAYLOAD"), 
-                timer_avg("SENDING_WS"), 
-                timer_avg("AUDIO"), 
-                timer_avg("SPECTRUM"));
+                stats_json());
 
     // Send data
     nnn = mg_ws_send(c, ws_data_buffer, n, WEBSOCKET_OP_BINARY);

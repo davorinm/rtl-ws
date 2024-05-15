@@ -5,7 +5,7 @@ PROGRAM=$(BUILDDIR)/$(EXECUTABLE)
 
 CC=gcc
 PERF_OPTS=-O3 -ffast-math -funroll-loops -Wall -Wextra -std=gnu99
-PERF_LIBS=-lpthread -lm -lfftw3
+PERF_LIBS=-lpthread -lrt -lm -lfftw3
 PPDEFS=-DRTL_WS_DEBUG
 
 CFLAGS=-I/usr/include
@@ -19,7 +19,7 @@ EMBED_FILES=1
 # Souces
 MAIN_CSOURCEFILES=src/main.c src/mongoose/mongoose.c src/web/web_handler.c
 DSP_CSOURCEFILES=src/dsp/spectrum.c src/dsp/rf_decimator.c src/dsp/rf_resample.c src/dsp/dsp.c src/dsp/rf_cic_decimate.c src/dsp/audio.c src/dsp/demodulator.c
-TOOLS_CSOURCEFILES=src/tools/helpers.c src/tools/list.c src/tools/timer.c
+TOOLS_CSOURCEFILES=src/tools/helpers.c src/tools/list.c src/tools/stats.c src/tools/dict.c
 PLUTO_CSOURCEFILES=src/sensor/sensor_pluto_helpers.c src/sensor/sensor_pluto.c
 RTLSDR_CSOURCEFILES=src/sensor/sensor_rtlsdr.c
 CSOURCEFILES=$(MAIN_CSOURCEFILES) $(DSP_CSOURCEFILES) $(TOOLS_CSOURCEFILES)

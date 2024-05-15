@@ -10,40 +10,37 @@
 #include "rf_decimator.h"
 #include "../tools/helpers.h"
 #include "../sensor/sensor.h"
-#include "../tools/timer.h"
+#include "../tools/stats.h"
 
 #define DECIMATED_TARGET_BW_HZ 48000 * 2
 
 static int audio_enabled = 0;
 static int spectrum_enabled = 1;
 
-static struct timespec time_measure;
-static double time_spent;
-
 static void demodulator_cb(const cmplx_dbl *signal, int len)
 {
-    timer_start(&time_measure);
+    static struct timespec time_measure;
+    stats_timer_start(&time_measure);
 
     if (audio_enabled)
     {
         rf_decimator_decimate(signal, len);
     }
 
-    timer_end(&time_measure, &time_spent);
-    timer_log("AUDIO", time_spent);
+    stats_timer_end("AUDIO", &time_measure);
 }
 
 static void spectrum_cb(const cmplx_dbl *signal, int len)
 {
-    timer_start(&time_measure);
+    static struct timespec time_measure;
+    stats_timer_start(&time_measure);
 
     if (spectrum_enabled)
     {
         spectrum_data(signal, len);
     }
 
-    timer_end(&time_measure, &time_spent);
-    timer_log("SPECTRUM", time_spent);
+    stats_timer_end("SPECTRUM_DATA", &time_measure);
 }
 
 static void signal_cb(const cmplx_dbl *signal, int len)
